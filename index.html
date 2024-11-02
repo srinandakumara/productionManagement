@@ -79,30 +79,35 @@
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
     }
     nav {
       background-color: #6c49b8;
       color: #fff;
       padding: 10px;
       display: flex;
+      flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
-      flex-wrap: wrap;
+    }
+    nav h1 {
+      margin: 0;
+      font-size: 24px;
     }
     nav a {
       color: #fff;
       text-decoration: none;
-      margin-left: 20px;
+      margin: 0 10px;
       font-weight: bold;
+      font-size: 14px;
     }
     nav button {
       background-color: #28a745;
       color: #fff;
       border: none;
-      padding: 5px 15px;
+      padding: 5px 10px;
       border-radius: 5px;
       cursor: pointer;
-      margin-left: 20px;
     }
     .content {
       padding: 20px;
@@ -118,6 +123,7 @@
       width: 100%;
       border-collapse: collapse;
       margin: 20px 0;
+      table-layout: auto;
     }
     th, td {
       border: 1px solid #ccc;
@@ -127,11 +133,6 @@
     th {
       background-color: #6c49b8;
       color: #fff;
-    }
-    #lastUpdate {
-      text-align: center;
-      margin-bottom: 15px;
-      font-size: 16px;
     }
     .calculate-btn {
       background-color: #00ff00;
@@ -143,14 +144,30 @@
       border-radius: 5px;
       margin-top: 20px;
     }
-    @media screen and (max-width: 768px) {
-      nav {
-        flex-direction: column;
-        align-items: flex-start;
+    /* Responsive adjustments */
+    @media only screen and (max-width: 768px) {
+      nav h1 {
+        font-size: 20px;
       }
       nav a, nav button {
-        margin-left: 0;
-        margin-top: 10px;
+        margin: 5px;
+        padding: 5px;
+        font-size: 12px;
+      }
+      table {
+        font-size: 12px;
+        overflow-x: auto;
+      }
+      th, td {
+        padding: 8px;
+        white-space: nowrap;
+      }
+      .content {
+        padding: 5px;
+      }
+      .calculate-btn {
+        padding: 8px;
+        font-size: 12px;
       }
     }
   </style>
@@ -174,8 +191,24 @@
       </div>
     </nav>
     <div class="content">
-      <h2>Welcome to the Home Page!</h2>
-      <!-- Your table and content here -->
+      <div id="lastUpdate">Last Update: Loading...</div>
+      <div class="table-label">Current Raw Material Stock</div>
+      <table id="dataTable">
+        <thead>
+          <tr>
+            <th>GRN NO.</th>
+            <th>SPECIES</th>
+            <th>RECEIVING DATE</th>
+            <th>DAYS ELAPSED</th>
+            <th>RECEIVED QUANTITY</th>
+            <th>REMAINING QUANTITY</th>
+            <th>TIME NEEDED FOR FINISH</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Rows will be dynamically added here -->
+        </tbody>
+      </table>
       <button class="calculate-btn" onclick="showCalculatePage()">Click here for calculate finishing date</button>
     </div>
   </div>
