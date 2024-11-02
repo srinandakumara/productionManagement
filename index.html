@@ -133,10 +133,12 @@
   <style>
     body {
       font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
     }
     #homePage, #loginForm {
       margin: 20px auto;
-      max-width: 1200px;
+      max-width: 95%;
     }
     #loginForm {
       text-align: center;
@@ -146,6 +148,8 @@
       display: block;
       margin: 10px auto;
       padding: 8px;
+      width: 100%;
+      max-width: 300px;
     }
     #loginForm button {
       background-color: #6c49b8;
@@ -153,6 +157,8 @@
       padding: 10px;
       border: none;
       cursor: pointer;
+      width: 100%;
+      max-width: 320px;
     }
     nav {
       background-color: #6c49b8;
@@ -161,11 +167,20 @@
       justify-content: space-between;
       align-items: center;
       color: #fff;
+      flex-wrap: wrap;
+    }
+    nav h1 {
+      font-size: 24px;
+    }
+    nav div {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
     }
     nav a {
       color: #fff;
       text-decoration: none;
-      margin: 0 15px;
+      margin: 0 5px;
       font-weight: bold;
     }
     nav button {
@@ -175,6 +190,7 @@
       padding: 5px 15px;
       border-radius: 5px;
       cursor: pointer;
+      margin: 0 5px;
     }
     .content {
       padding: 20px;
@@ -190,6 +206,8 @@
       width: 100%;
       border-collapse: collapse;
       margin: 20px 0;
+      table-layout: fixed;
+      word-wrap: break-word;
     }
     th, td {
       border: 1px solid #ccc;
@@ -214,6 +232,33 @@
       cursor: pointer;
       border-radius: 5px;
       margin-top: 20px;
+    }
+    @media (max-width: 768px) {
+      nav h1 {
+        font-size: 20px;
+      }
+      th, td {
+        font-size: 14px;
+        padding: 8px;
+      }
+      .calculate-btn {
+        font-size: 12px;
+        padding: 8px;
+      }
+    }
+    @media (max-width: 480px) {
+      th, td {
+        font-size: 12px;
+        padding: 5px;
+      }
+      .calculate-btn {
+        font-size: 10px;
+        padding: 5px;
+      }
+      nav a {
+        font-size: 14px;
+        margin: 0 2px;
+      }
     }
   </style>
 </head>
@@ -258,4 +303,4 @@
     </div>
   </div>
 </body>
-</html
+</html>
