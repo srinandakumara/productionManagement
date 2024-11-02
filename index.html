@@ -46,198 +46,58 @@
       } else {
         document.getElementById('loginForm').style.display = 'block';
         document.getElementById('homePage').style.display = 'none';
+        document.getElementById('calculatePage').style.display = 'none';
       }
     });
 
-    function calculateDaysElapsed(receivingDate) {
-      const today = new Date();
-      const receivedDate = new Date(receivingDate);
-      const timeDifference = today - receivedDate;
-      const daysElapsed = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
-      return daysElapsed >= 0 ? daysElapsed : 0;
-    }
-
     function loadTableData() {
-      const tableBody = document.querySelector('#dataTable tbody');
-      const lastUpdateElement = document.getElementById('lastUpdate');
-      let latestTimestamp = null;
-
-      db.ref('/').on('value', (snapshot) => {
-        tableBody.innerHTML = '';
-        const data = snapshot.val();
-        if (data) {
-          Object.keys(data).forEach((key) => {
-            const item = data[key];
-            const daysElapsed = calculateDaysElapsed(item.receivingDate);
-
-            const row = document.createElement('tr');
-            row.innerHTML = `
-              <td>${item.grnNo || ''}</td>
-              <td>${item.species || ''}</td>
-              <td>${item.receivingDate || ''}</td>
-              <td>${daysElapsed}</td>
-              <td>${item.receivedQuantity || ''}</td>
-              <td>${item.remainingQuantity || ''}</td>
-              <td>${item.timeNeeded || ''}</td>
-            `;
-            tableBody.appendChild(row);
-
-            if (item.lastUpdated) {
-              const itemTimestamp = new Date(item.lastUpdated);
-              if (!latestTimestamp || itemTimestamp > latestTimestamp) {
-                latestTimestamp = itemTimestamp;
-              }
-            }
-          });
-
-          if (latestTimestamp) {
-            lastUpdateElement.textContent = `Last Update: ${latestTimestamp.toLocaleString()}`;
-          } else {
-            lastUpdateElement.textContent = 'Last Update: No timestamp available';
-          }
-        } else {
-          lastUpdateElement.textContent = 'No data available';
-        }
-      }, (error) => {
-        console.error('Error fetching data:', error);
-        lastUpdateElement.textContent = 'Failed to load data';
-      });
+      // Your data loading logic for the table
     }
 
     function logout() {
       auth.signOut().then(() => {
         alert('Logged out successfully');
+        window.location.reload();
       }).catch((error) => {
         alert('Error logging out: ' + error.message);
       });
     }
 
-    function calculateFinishingDate() {
-      alert('Finishing date calculation logic goes here.');
+    function showCalculatePage() {
+      document.getElementById('homePage').style.display = 'none';
+      document.getElementById('calculatePage').style.display = 'block';
+    }
+
+    function showHomePage() {
+      document.getElementById('calculatePage').style.display = 'none';
+      document.getElementById('homePage').style.display = 'block';
     }
   </script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    #homePage, #loginForm {
-      margin: 20px auto;
-      max-width: 95%;
-    }
-    #loginForm {
-      text-align: center;
-    }
-    #loginForm input {
-      display: block;
-      margin: 10px auto;
-      padding: 8px;
-      width: 90%;
-      max-width: 300px;
-    }
-    #loginForm button {
-      background-color: #6c49b8;
-      color: #fff;
-      padding: 10px;
-      border: none;
-      cursor: pointer;
-      width: 100px;
-    }
+    /* Your CSS styling here */
     nav {
       background-color: #6c49b8;
       padding: 10px;
       display: flex;
-      flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
       color: #fff;
     }
-    nav h1 {
-      margin: 0;
-      font-size: 24px;
-    }
-    nav a {
+    nav a, nav button {
       color: #fff;
       text-decoration: none;
-      margin: 0 10px;
-      font-weight: bold;
-      font-size: 14px;
+      margin-left: 20px;
     }
     nav button {
       background-color: #28a745;
-      color: #fff;
       border: none;
-      padding: 5px 10px;
+      padding: 5px 15px;
       border-radius: 5px;
       cursor: pointer;
     }
     .content {
-      padding: 10px;
+      padding: 20px;
       text-align: center;
-    }
-    .table-label {
-      text-align: left;
-      font-weight: bold;
-      margin-bottom: 10px;
-      font-size: 18px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 20px 0;
-      table-layout: auto;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 10px;
-      text-align: center;
-    }
-    th {
-      background-color: #6c49b8;
-      color: #fff;
-    }
-    #lastUpdate {
-      text-align: center;
-      margin-bottom: 15px;
-      font-size: 16px;
-    }
-    .calculate-btn {
-      background-color: #00ff00;
-      color: #000;
-      border: 2px solid #00ff00;
-      padding: 10px;
-      text-transform: uppercase;
-      cursor: pointer;
-      border-radius: 5px;
-      margin-top: 20px;
-    }
-    /* Responsive adjustments */
-    @media only screen and (max-width: 768px) {
-      nav h1 {
-        font-size: 20px;
-      }
-      nav a, nav button {
-        margin: 5px;
-        padding: 5px;
-        font-size: 12px;
-      }
-      table {
-        font-size: 12px;
-        overflow-x: auto;
-      }
-      th, td {
-        padding: 8px;
-        white-space: nowrap;
-      }
-      .content {
-        padding: 5px;
-      }
-      .calculate-btn {
-        padding: 8px;
-        font-size: 12px;
-      }
     }
   </style>
 </head>
@@ -253,6 +113,24 @@
     <nav>
       <h1>Home Page</h1>
       <div>
+        <a href="javascript:void(0);" onclick="showCalculatePage()">STOCK</a>
+        <a href="#">TODAY PLAN</a>
+        <a href="#">DAILY REPORT</a>
+        <button onclick="logout()">Logout</button>
+      </div>
+    </nav>
+    <div class="content">
+      <h2>Welcome to the Home Page!</h2>
+      <!-- Your table and content here -->
+      <button class="calculate-btn" onclick="showCalculatePage()">Click here for calculate finishing date</button>
+    </div>
+  </div>
+
+  <div id="calculatePage" style="display: none;">
+    <nav>
+      <h1>Calculate</h1>
+      <div>
+        <a href="javascript:void(0);" onclick="showHomePage()">HOME PAGE</a>
         <a href="#">STOCK</a>
         <a href="#">TODAY PLAN</a>
         <a href="#">DAILY REPORT</a>
@@ -260,25 +138,9 @@
       </div>
     </nav>
     <div class="content">
-      <div id="lastUpdate">Last Update: Loading...</div>
-      <div class="table-label">Current Raw Material Stock</div>
-      <table id="dataTable">
-        <thead>
-          <tr>
-            <th>GRN NO.</th>
-            <th>SPECIES</th>
-            <th>RECEIVING DATE</th>
-            <th>DAYS ELAPSED</th>
-            <th>RECEIVED QUANTITY</th>
-            <th>REMAINING QUANTITY</th>
-            <th>TIME NEEDED FOR FINISH</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- Rows will be dynamically added here -->
-        </tbody>
-      </table>
-      <button class="calculate-btn" onclick="calculateFinishingDate()">Click here for calculate finishing date</button>
+      <h2>Calculation Page</h2>
+      <p>This is the page for calculation details.</p>
+      <!-- Add any calculation-specific content here -->
     </div>
   </div>
 </body>
