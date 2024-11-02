@@ -57,20 +57,6 @@
       return daysElapsed >= 0 ? daysElapsed : 0;
     }
 
-    function formatDateTime(dateString) {
-      const date = new Date(dateString);
-      const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
-      const formattedDate = date.toLocaleDateString('en-US', options);
-
-      let hours = date.getHours();
-      const minutes = date.getMinutes().toString().padStart(2, '0');
-      const seconds = date.getSeconds().toString().padStart(2, '0');
-      const ampm = hours >= 12 ? 'PM' : 'AM';
-      hours = hours % 12 || 12;
-
-      return `${formattedDate}, ${hours}:${minutes}:${seconds} ${ampm}`;
-    }
-
     function loadTableData() {
       const tableBody = document.querySelector('#dataTable tbody');
       const lastUpdateElement = document.getElementById('lastUpdate');
@@ -105,7 +91,7 @@
           });
 
           if (latestTimestamp) {
-            lastUpdateElement.textContent = `Last Update: ${formatDateTime(latestTimestamp)}`;
+            lastUpdateElement.textContent = `Last Update: ${latestTimestamp.toLocaleString()}`;
           } else {
             lastUpdateElement.textContent = 'Last Update: No timestamp available';
           }
@@ -135,6 +121,7 @@
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
     }
     #homePage, #loginForm {
       margin: 20px auto;
@@ -142,13 +129,12 @@
     }
     #loginForm {
       text-align: center;
-      display: none;
     }
     #loginForm input {
       display: block;
       margin: 10px auto;
       padding: 8px;
-      width: 100%;
+      width: 90%;
       max-width: 300px;
     }
     #loginForm button {
@@ -157,43 +143,38 @@
       padding: 10px;
       border: none;
       cursor: pointer;
-      width: 100%;
-      max-width: 320px;
+      width: 100px;
     }
     nav {
       background-color: #6c49b8;
       padding: 10px;
       display: flex;
+      flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
       color: #fff;
-      flex-wrap: wrap;
     }
     nav h1 {
+      margin: 0;
       font-size: 24px;
-    }
-    nav div {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
     }
     nav a {
       color: #fff;
       text-decoration: none;
-      margin: 0 5px;
+      margin: 0 10px;
       font-weight: bold;
+      font-size: 14px;
     }
     nav button {
       background-color: #28a745;
       color: #fff;
       border: none;
-      padding: 5px 15px;
+      padding: 5px 10px;
       border-radius: 5px;
       cursor: pointer;
-      margin: 0 5px;
     }
     .content {
-      padding: 20px;
+      padding: 10px;
       text-align: center;
     }
     .table-label {
@@ -206,8 +187,7 @@
       width: 100%;
       border-collapse: collapse;
       margin: 20px 0;
-      table-layout: fixed;
-      word-wrap: break-word;
+      table-layout: auto;
     }
     th, td {
       border: 1px solid #ccc;
@@ -233,31 +213,30 @@
       border-radius: 5px;
       margin-top: 20px;
     }
-    @media (max-width: 768px) {
+    /* Responsive adjustments */
+    @media only screen and (max-width: 768px) {
       nav h1 {
         font-size: 20px;
       }
-      th, td {
-        font-size: 14px;
-        padding: 8px;
-      }
-      .calculate-btn {
+      nav a, nav button {
+        margin: 5px;
+        padding: 5px;
         font-size: 12px;
-        padding: 8px;
       }
-    }
-    @media (max-width: 480px) {
-      th, td {
+      table {
         font-size: 12px;
+        overflow-x: auto;
+      }
+      th, td {
+        padding: 8px;
+        white-space: nowrap;
+      }
+      .content {
         padding: 5px;
       }
       .calculate-btn {
-        font-size: 10px;
-        padding: 5px;
-      }
-      nav a {
-        font-size: 14px;
-        margin: 0 2px;
+        padding: 8px;
+        font-size: 12px;
       }
     }
   </style>
