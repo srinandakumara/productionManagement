@@ -52,51 +52,71 @@
 
     // Load data from Firebase Realtime Database
     function loadTableData() {
-      const tableBody = document.querySelector('#dataTable tbody');
-      const lastUpdateElement = document.getElementById('lastUpdate');
-      let latestTimestamp = null;
+  const homeTableBody = document.querySelector('#dataTable tbody');
+  const calcTableBody = document.getElementById('calculationTableBody');
+  const lastUpdateElement = document.getElementById('lastUpdate');
+  let latestTimestamp = null;
 
-      db.ref('/').on('value', (snapshot) => {
-        tableBody.innerHTML = '';
-        const data = snapshot.val();
-        if (data) {
-          Object.keys(data).forEach((key) => {
-            const item = data[key];
-            const daysElapsed = calculateDaysElapsed(item.receivingDate);
+  db.ref('/').on('value', (snapshot) => {
+    homeTableBody.innerHTML = '';
+    calcTableBody.innerHTML = '';
+    const data = snapshot.val();
+    if (data) {
+      Object.keys(data).forEach((key) => {
+        const item = data[key];
+        const daysElapsed = calculateDaysElapsed(item.receivingDate);
 
-            const row = document.createElement('tr');
-            row.innerHTML = `
-              <td>${item.grnNo || ''}</td>
-              <td>${item.species || ''}</td>
-              <td>${item.receivingDate || ''}</td>
-              <td>${daysElapsed}</td>
-              <td>${item.receivedQuantity || ''}</td>
-              <td>${item.remainingQuantity || ''}</td>
-              <td>${item.timeNeeded || ''}</td>
-            `;
-            tableBody.appendChild(row);
+        // Populate the home page table
+        const homeRow = document.createElement('tr');
+        homeRow.innerHTML = `
+          <td>${item.grnNo || ''}</td>
+          <td>${item.species || ''}</td>
+          <td>${item.receivingDate || ''}</td>
+          <td>${daysElapsed}</td>
+          <td>${item.receivedQuantity || ''}</td>
+          <td>${item.remainingQuantity || ''}</td>
+          <td>${item.timeNeeded || ''}</td>
+        `;
+        homeTableBody.appendChild(homeRow);
 
-            if (item.lastUpdated) {
-              const itemTimestamp = new Date(item.lastUpdated);
-              if (!latestTimestamp || itemTimestamp > latestTimestamp) {
-                latestTimestamp = itemTimestamp;
-              }
-            }
-          });
+        // Populate the calculation page table
+        const calcRow = document.createElement('tr');
+        calcRow.innerHTML = `
+          <td>${item.grnNo || ''}</td>
+          <td>${item.species || ''}</td>
+          <td>${item.receivingDate || ''}</td>
+          <td>${item.remainingQuantity || ''}</td>
+          <td><input type="date" placeholder="Finishing Date"></td>
+          <td><input type="date" placeholder="Expiration Date"></td>
+          <td>
+            <button onclick="moveRowUp(this)">⬆️</button>
+            <button onclick="moveRowDown(this)">⬇️</button>
+          </td>
+        `;
+        calcTableBody.appendChild(calcRow);
 
-          if (latestTimestamp) {
-            lastUpdateElement.textContent = `Last Update: ${formatTimestamp(latestTimestamp)}`;
-          } else {
-            lastUpdateElement.textContent = 'Last Update: No timestamp available';
+        if (item.lastUpdated) {
+          const itemTimestamp = new Date(item.lastUpdated);
+          if (!latestTimestamp || itemTimestamp > latestTimestamp) {
+            latestTimestamp = itemTimestamp;
           }
-        } else {
-          lastUpdateElement.textContent = 'No data available';
         }
-      }, (error) => {
-        console.error('Error fetching data:', error);
-        lastUpdateElement.textContent = 'Failed to load data';
       });
+
+      if (latestTimestamp) {
+        lastUpdateElement.textContent = `Last Update: ${formatTimestamp(latestTimestamp)}`;
+      } else {
+        lastUpdateElement.textContent = 'Last Update: No timestamp available';
+      }
+    } else {
+      lastUpdateElement.textContent = 'No data available';
     }
+  }, (error) => {
+    console.error('Error fetching data:', error);
+    lastUpdateElement.textContent = 'Failed to load data';
+  });
+}
+
 
     function calculateDaysElapsed(receivingDate) {
       const today = new Date();
@@ -137,6 +157,41 @@
       document.getElementById('calculatePage').style.display = 'none';
       document.getElementById('homePage').style.display = 'block';
     }
+	
+	function addNewRow() {
+  const tableBody = document.getElementById('calculationTableBody');
+  const newRow = document.createElement('tr');
+  newRow.innerHTML = `
+    <td><input type="text" placeholder="GRN NO."></td>
+    <td><input type="text" placeholder="Species"></td>
+    <td><input type="date"></td>
+    <td><input type="text" placeholder="Remaining Quantity"></td>
+    <td><input type="date"></td>
+    <td><input type="date"></td>
+    <td>
+      <button onclick="moveRowUp(this)">⬆️</button>
+      <button onclick="moveRowDown(this)">⬇️</button>
+    </td>
+  `;
+  tableBody.appendChild(newRow);
+	}
+	function moveRowUp(button) {
+	const row = button.parentElement.parentElement;
+	const previousRow = row.previousElementSibling;
+	if (previousRow) {
+    row.parentNode.insertBefore(row, previousRow);
+		}
+	}
+
+	function moveRowDown(button) {
+	const row = button.parentElement.parentElement;
+	const nextRow = row.nextElementSibling;
+	if (nextRow) {
+    row.parentNode.insertBefore(nextRow, row);
+		}
+	}
+
+
   </script>
   <style>
     body {
@@ -318,16 +373,32 @@
       <h1>Calculate</h1>
       <div>
         <a href="javascript:void(0);" onclick="showHomePage()">HOME PAGE</a>
-        <a href="#">STOCK</a>
-        <a href="#">TODAY PLAN</a>
-        <a href="#">DAILY REPORT</a>
-        <button onclick="logout()">Logout</button>
+		<a href="#">STOCK</a>
+		<a href="#">TODAY PLAN</a>
+		<a href="#">DAILY REPORT</a>
+		<button onclick="logout()">Logout</button>
       </div>
     </nav>
     <div class="content">
       <h2>Calculation Page</h2>
-      <p>This is the page for calculation details.</p>
       <!-- Add any calculation-specific content here -->
+	  <table id="calculationTable">
+      <thead>
+        <tr>
+          <th>GRN NO.</th>
+          <th>SPECIES</th>
+          <th>RECEIVING DATE</th>
+          <th>REMAINING QUANTITY</th>
+          <th>FINISHING DATE</th>
+          <th>EXPIRATION WHEN FINISH</th>
+          <th>ACTIONS</th>
+         </tr>
+       </thead>
+       <tbody id="calculationTableBody">
+        <!-- Rows will be dynamically added here -->
+       </tbody>
+     </table>
+     <button class="add-row-btn" onclick="addNewRow()">Add New Row</button>
     </div>
   </div>
 </body>
