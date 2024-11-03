@@ -50,9 +50,73 @@
       }
     });
 
+    // Load data from Firebase Realtime Database
     function loadTableData() {
-      // Load your data logic here
-      console.log('Loading table data...');
+      const tableBody = document.querySelector('#dataTable tbody');
+      const lastUpdateElement = document.getElementById('lastUpdate');
+      let latestTimestamp = null;
+
+      db.ref('/').on('value', (snapshot) => {
+        tableBody.innerHTML = '';
+        const data = snapshot.val();
+        if (data) {
+          Object.keys(data).forEach((key) => {
+            const item = data[key];
+            const daysElapsed = calculateDaysElapsed(item.receivingDate);
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${item.grnNo || ''}</td>
+              <td>${item.species || ''}</td>
+              <td>${item.receivingDate || ''}</td>
+              <td>${daysElapsed}</td>
+              <td>${item.receivedQuantity || ''}</td>
+              <td>${item.remainingQuantity || ''}</td>
+              <td>${item.timeNeeded || ''}</td>
+            `;
+            tableBody.appendChild(row);
+
+            if (item.lastUpdated) {
+              const itemTimestamp = new Date(item.lastUpdated);
+              if (!latestTimestamp || itemTimestamp > latestTimestamp) {
+                latestTimestamp = itemTimestamp;
+              }
+            }
+          });
+
+          if (latestTimestamp) {
+            lastUpdateElement.textContent = `Last Update: ${formatTimestamp(latestTimestamp)}`;
+          } else {
+            lastUpdateElement.textContent = 'Last Update: No timestamp available';
+          }
+        } else {
+          lastUpdateElement.textContent = 'No data available';
+        }
+      }, (error) => {
+        console.error('Error fetching data:', error);
+        lastUpdateElement.textContent = 'Failed to load data';
+      });
+    }
+
+    function calculateDaysElapsed(receivingDate) {
+      const today = new Date();
+      const receivedDate = new Date(receivingDate);
+      const timeDifference = today - receivedDate;
+      const daysElapsed = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+      return daysElapsed >= 0 ? daysElapsed : 0;
+    }
+
+    function formatTimestamp(timestamp) {
+      const options = {
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric',
+        hour12: true
+      };
+      return new Date(timestamp).toLocaleString('en-US', options);
     }
 
     function logout() {
@@ -80,6 +144,42 @@
       margin: 0;
       padding: 0;
       box-sizing: border-box;
+    }
+    #homePage, #loginForm {
+      margin: 20px auto;
+      max-width: 95%;
+    }
+    #loginForm {
+      text-align: center;
+      background-color: #f9f9f9;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      max-width: 400px;
+    }
+    #loginForm h2 {
+      margin-bottom: 20px;
+    }
+    #loginForm input {
+      display: block;
+      margin: 10px auto;
+      padding: 10px;
+      width: 80%;
+      max-width: 300px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    #loginForm button {
+      background-color: #6c49b8;
+      color: #fff;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      width: 50%;
+    }
+    #loginForm button:hover {
+      background-color: #5a3f9d;
     }
     nav {
       background-color: #6c49b8;
