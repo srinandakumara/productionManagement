@@ -190,6 +190,57 @@
     row.parentNode.insertBefore(nextRow, row);
 		}
 	}
+	// Add a new row to OT Consideration table
+function addNewOTRow() {
+  const tableBody = document.getElementById('otTableBody');
+  const newRow = document.createElement('tr');
+  newRow.innerHTML = `
+    <td><input type="date"></td>
+    <td><input type="text" placeholder="OT Hours"></td>
+    <td>
+      <button onclick="deleteRow(this)">🗑️</button>
+    </td>
+  `;
+  tableBody.appendChild(newRow);
+}
+
+// Add a new row to ICE Loading table
+function addNewIceLoadingRow() {
+  const tableBody = document.getElementById('iceLoadingTableBody');
+  const newRow = document.createElement('tr');
+  newRow.innerHTML = `
+    <td><input type="date"></td>
+    <td><input type="text" placeholder="Ice Bag Qty"></td>
+    <td><input type="text" placeholder="Peoples"></td>
+    <td><input type="text" placeholder="Time Need"></td>
+    <td>
+      <button onclick="deleteRow(this)">🗑️</button>
+    </td>
+  `;
+  tableBody.appendChild(newRow);
+}
+
+// Add a new row to Other Works table
+function addNewOtherWorksRow() {
+  const tableBody = document.getElementById('otherWorksTableBody');
+  const newRow = document.createElement('tr');
+  newRow.innerHTML = `
+    <td><input type="date"></td>
+    <td><input type="text" placeholder="Time Need"></td>
+    <td><input type="text" placeholder="Peoples"></td>
+    <td>
+      <button onclick="deleteRow(this)">🗑️</button>
+    </td>
+  `;
+  tableBody.appendChild(newRow);
+}
+
+// Delete a row from any table
+function deleteRow(button) {
+  const row = button.parentElement.parentElement;
+  row.remove();
+}
+
 
 
   </script>
@@ -325,6 +376,21 @@
         font-size: 12px;
       }
     }
+	.additional-tables-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.table-container {
+  text-align: center;
+}
+
+.add-row-btn {
+  margin-top: 10px;
+}
+
   </style>
 </head>
 <body>
@@ -380,9 +446,10 @@
       </div>
     </nav>
     <div class="content">
-      <h2>Calculation Page</h2>
-      <!-- Add any calculation-specific content here -->
-	  <table id="calculationTable">
+  <h2>Calculation Page</h2>
+  <!-- Existing Table -->
+  <div class="table-container">
+    <table id="calculationTable">
       <thead>
         <tr>
           <th>GRN NO.</th>
@@ -392,14 +459,76 @@
           <th>FINISHING DATE</th>
           <th>EXPIRATION WHEN FINISH</th>
           <th>ACTIONS</th>
-         </tr>
-       </thead>
-       <tbody id="calculationTableBody">
+        </tr>
+      </thead>
+      <tbody id="calculationTableBody">
         <!-- Rows will be dynamically added here -->
-       </tbody>
-     </table>
-     <button class="add-row-btn" onclick="addNewRow()">Add New Row</button>
+      </tbody>
+    </table>
+    <button class="add-row-btn" onclick="addNewRow()">Add New Row</button>
+  </div>
+
+  <!-- Grid layout for additional tables -->
+  <div class="additional-tables-grid">
+    <!-- OT Consideration Table -->
+    <div class="table-container">
+      <h3>OT CONSIDERATION</h3>
+      <table id="otTable">
+        <thead>
+          <tr>
+            <th>DATE</th>
+            <th>OT HOURS</th>
+            <th>ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody id="otTableBody">
+          <!-- Rows will be dynamically added here -->
+        </tbody>
+      </table>
+      <button class="add-row-btn" onclick="addNewOTRow()">Add New Row</button>
     </div>
+
+    <!-- ICE Loading Table -->
+    <div class="table-container">
+      <h3>ICE LOADING</h3>
+      <table id="iceLoadingTable">
+        <thead>
+          <tr>
+            <th>DATE</th>
+            <th>ICE BAG QTY</th>
+            <th>PEOPLES</th>
+            <th>TIME NEED</th>
+            <th>ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody id="iceLoadingTableBody">
+          <!-- Rows will be dynamically added here -->
+        </tbody>
+      </table>
+      <button class="add-row-btn" onclick="addNewIceLoadingRow()">Add New Row</button>
+    </div>
+
+    <!-- Other Works Table -->
+    <div class="table-container">
+      <h3>OTHER WORKS</h3>
+      <table id="otherWorksTable">
+        <thead>
+          <tr>
+            <th>DATE</th>
+            <th>TIME NEED</th>
+            <th>PEOPLES</th>
+            <th>ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody id="otherWorksTableBody">
+          <!-- Rows will be dynamically added here -->
+        </tbody>
+      </table>
+      <button class="add-row-btn" onclick="addNewOtherWorksRow()">Add New Row</button>
+    </div>
+  </div>
+</div>
+
   </div>
 </body>
 </html>
