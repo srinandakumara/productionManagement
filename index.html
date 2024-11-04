@@ -69,6 +69,14 @@
             const item = data[key];
             const daysElapsed = calculateDaysElapsed(item.receivingDate);
 
+            // Update latest timestamp if lastUpdated is later
+            if (item.lastUpdated) {
+              const lastUpdatedDate = new Date(item.lastUpdated).getTime();
+              if (!latestTimestamp || lastUpdatedDate > latestTimestamp) {
+                latestTimestamp = lastUpdatedDate;
+              }
+            }
+
             // Populate the home page table
             const homeRow = document.createElement('tr');
             homeRow.innerHTML = `
@@ -97,16 +105,8 @@
               </td>
             `;
             calcTableBody.appendChild(calcRow);
-
-            calculateFinishingTime(item, calcRow);
-
-            if (item.lastUpdated) {
-              const itemTimestamp = new Date(item.lastUpdated);
-              if (!latestTimestamp || itemTimestamp > latestTimestamp) {
-                latestTimestamp = itemTimestamp;
-              }
-            }
           });
+          updateFinishingTimes();
 
           if (latestTimestamp) {
             lastUpdateElement.textContent = `Last Update: ${formatTimestamp(latestTimestamp)}`;
@@ -128,31 +128,38 @@
       db.ref('/availableWorkers').on('value', (snapshot) => {
         const count = snapshot.val() || 0;
         workerCountElement.textContent = `Available Workers Today: ${count}`;
+        updateFinishingTimes();
       });
     }
 
-    // Calculate Finishing Time
-    function calculateFinishingTime(item, calcRow) {
+    // Update Finishing Time for all rows
+    function updateFinishingTimes() {
+      const rows = Array.from(document.getElementById('calculationTableBody').children);
+      let cumulativeTime = 0;
       db.ref('/availableWorkers').once('value').then((snapshot) => {
         const availableWorkers = snapshot.val() || 0;
-        let manHoursRequired = 0;
-        const remainingQuantity = parseFloat(item.remainingQuantity); // Parse remaining quantity as a number
+        rows.forEach((row, index) => {
+          const species = row.children[1].querySelector('input') ? row.children[1].querySelector('input').value : row.children[1].textContent;
+          const remainingQuantity = parseFloat(row.children[3].querySelector('input') ? row.children[3].querySelector('input').value : row.children[3].textContent);
+          let manHoursRequired = 0;
 
-        if (isNaN(remainingQuantity)) {
-          return;
-        }
+          if (isNaN(remainingQuantity)) {
+            return;
+          }
 
-        if (item.species === 'Skipjack') {
-          manHoursRequired = (remainingQuantity / 1423) * 35.25;
-        } else if (item.species === 'Tuna') {
-          manHoursRequired = (remainingQuantity / 1000) * 10;
-        }
+          if (species === 'Skipjack') {
+            manHoursRequired = (remainingQuantity / 1423) * 35.25;
+          } else if (species === 'Tuna') {
+            manHoursRequired = (remainingQuantity / 1000) * 10;
+          }
 
-        if (availableWorkers > 0) {
-          const hoursRequired = manHoursRequired / availableWorkers;
-          const finishingTimeInput = calcRow.querySelector('input[placeholder="Finishing Time"]');
-          finishingTimeInput.value = `${hoursRequired.toFixed(2)} hours`;
-        }
+          if (availableWorkers > 0) {
+            const hoursRequired = manHoursRequired / availableWorkers;
+            cumulativeTime += hoursRequired;
+            const finishingTimeInput = row.querySelector('input[placeholder="Finishing Time"]');
+            finishingTimeInput.value = `${cumulativeTime.toFixed(2)} hours`;
+          }
+        });
       });
     }
 
@@ -229,13 +236,8 @@
         </td>
       `;
       tableBody.appendChild(newRow);
-
-      // Calculate finishing time for the new row
-      const item = {
-        species: newRow.querySelector('input[placeholder="Species"]').value,
-        remainingQuantity: newRow.querySelector('input[placeholder="Remaining Quantity"]').value
-      };
-      calculateFinishingTime(item, newRow);
+      attachInputListeners(newRow);
+      updateFinishingTimes();
     }
 
     function moveRowUp(button) {
@@ -243,6 +245,7 @@
       const previousRow = row.previousElementSibling;
       if (previousRow) {
         row.parentNode.insertBefore(row, previousRow);
+        updateFinishingTimes();
       }
     }
 
@@ -250,8 +253,19 @@
       const row = button.parentElement.parentElement;
       const nextRow = row.nextElementSibling;
       if (nextRow) {
-        row.parentNode.insertBefore(row, nextRow);
+        row.parentNode.insertBefore(nextRow, row);
+        updateFinishingTimes();
       }
+    }
+
+    // Attach input listeners to dynamically update finishing times when data changes
+    function attachInputListeners(row) {
+      const inputs = row.querySelectorAll('input[type="text"], input[type="date"]');
+      inputs.forEach(input => {
+        input.addEventListener('input', () => {
+          updateFinishingTimes();
+        });
+      });
     }
 
     // Add a new row to OT Consideration table
@@ -303,6 +317,7 @@
     function deleteRow(button) {
       const row = button.parentElement.parentElement;
       row.remove();
+      updateFinishingTimes();
     }
   </script>
   <style>
