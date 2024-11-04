@@ -161,15 +161,15 @@
       const tableBody = document.getElementById('calculationTableBody');
       const newRow = document.createElement('tr');
       newRow.innerHTML = `
-        <td><input type="text" placeholder="GRN NO."></td>
-        <td><input type="text" placeholder="Species"></td>
-        <td><input type="date"></td>
-        <td><input type="text" placeholder="Remaining Quantity"></td>
-        <td><input type="date"></td>
-        <td><input type="date"></td>
+        <td><input type="text" placeholder="GRN NO." style="width: 100%;"></td>
+        <td><input type="text" placeholder="Species" style="width: 100%;"></td>
+        <td><input type="date" style="width: 100%;"></td>
+        <td><input type="text" placeholder="Remaining Quantity" style="width: 100%;"></td>
+        <td><input type="date" style="width: 100%;"></td>
+        <td><input type="date" style="width: 100%;"></td>
         <td>
-          <button onclick="moveRowUp(this)">⬆️</button>
-          <button onclick="moveRowDown(this)">⬇️</button>
+          <button onclick="moveRowUp(this)" style="width: 48%;">⬆️</button>
+          <button onclick="moveRowDown(this)" style="width: 48%;">⬇️</button>
         </td>
       `;
       tableBody.appendChild(newRow);
@@ -196,10 +196,10 @@
       const tableBody = document.getElementById('otTableBody');
       const newRow = document.createElement('tr');
       newRow.innerHTML = `
-        <td><input type="date"></td>
-        <td><input type="text" placeholder="OT Hours"></td>
+        <td><input type="date" style="width: 100%;"></td>
+        <td><input type="text" placeholder="OT Hours" style="width: 100%;"></td>
         <td>
-          <button onclick="deleteRow(this)">🗑️</button>
+          <button onclick="deleteRow(this)" style="width: 100%;">🗑️</button>
         </td>
       `;
       tableBody.appendChild(newRow);
@@ -210,12 +210,12 @@
       const tableBody = document.getElementById('iceLoadingTableBody');
       const newRow = document.createElement('tr');
       newRow.innerHTML = `
-        <td><input type="date"></td>
-        <td><input type="text" placeholder="Ice Bag Qty"></td>
-        <td><input type="text" placeholder="Peoples"></td>
-        <td><input type="text" placeholder="Time Need"></td>
+        <td><input type="date" style="width: 100%;"></td>
+        <td><input type="text" placeholder="Ice Bag Qty" style="width: 100%;"></td>
+        <td><input type="text" placeholder="Peoples" style="width: 100%;"></td>
+        <td><input type="text" placeholder="Time Need" style="width: 100%;"></td>
         <td>
-          <button onclick="deleteRow(this)">🗑️</button>
+          <button onclick="deleteRow(this)" style="width: 100%;">🗑️</button>
         </td>
       `;
       tableBody.appendChild(newRow);
@@ -226,11 +226,11 @@
       const tableBody = document.getElementById('otherWorksTableBody');
       const newRow = document.createElement('tr');
       newRow.innerHTML = `
-        <td><input type="date"></td>
-        <td><input type="text" placeholder="Time Need"></td>
-        <td><input type="text" placeholder="Peoples"></td>
+        <td><input type="date" style="width: 100%;"></td>
+        <td><input type="text" placeholder="Time Need" style="width: 100%;"></td>
+        <td><input type="text" placeholder="Peoples" style="width: 100%;"></td>
         <td>
-          <button onclick="deleteRow(this)">🗑️</button>
+          <button onclick="deleteRow(this)" style="width: 100%;">🗑️</button>
         </td>
       `;
       tableBody.appendChild(newRow);
@@ -327,16 +327,26 @@
       width: 100%;
       border-collapse: collapse;
       margin: 20px 0;
-      table-layout: auto;
+      table-layout: fixed; /* Ensure tables have a fixed layout */
+      font-size: 12px; /* Reduced font size */
     }
     th, td {
       border: 1px solid #ccc;
-      padding: 10px;
+      padding: 8px;
       text-align: center;
+      word-wrap: break-word; /* Ensure text wraps within cells */
     }
     th {
       background-color: #6c49b8;
       color: #fff;
+    }
+    input[type="text"], input[type="date"] {
+      box-sizing: border-box;
+      padding: 5px;
+    }
+    button {
+      box-sizing: border-box;
+      padding: 5px;
     }
     .calculate-btn {
       background-color: #00ff00;
@@ -359,11 +369,11 @@
         font-size: 12px;
       }
       table {
-        font-size: 12px;
+        font-size: 10px;
         overflow-x: auto;
       }
       th, td {
-        padding: 8px;
+        padding: 6px;
         white-space: nowrap;
       }
       .content {
@@ -382,6 +392,7 @@
     }
     .table-container {
       text-align: center;
+      font-size: 12px; /* Reduced font size */
     }
     .add-row-btn {
       margin-top: 10px;
