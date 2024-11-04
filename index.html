@@ -21,32 +21,6 @@
     const auth = firebase.auth();
     const db = firebase.database();
 
-    // Admin check and display worker count input
-    function displayAdminOptions(user) {
-      if (user.email === 'kumar@seaspire.com') { // Replace with your admin email
-        document.getElementById('adminOptions').style.display = 'block';
-        loadWorkerCount();
-      }
-    }
-
-    // Load available worker count from Firebase
-    function loadWorkerCount() {
-      const workerCountInput = document.getElementById('workerCount');
-      db.ref('/availableWorkers').once('value').then((snapshot) => {
-        workerCountInput.value = snapshot.val() || 0;
-      });
-    }
-
-    // Update worker count in Firebase
-    function updateWorkerCount() {
-      const workerCount = document.getElementById('workerCount').value;
-      db.ref('/availableWorkers').set(workerCount).then(() => {
-        alert('Worker count updated successfully');
-      }).catch((error) => {
-        alert('Error updating worker count: ' + error.message);
-      });
-    }
-
     // Login function
     function login() {
       const email = document.getElementById('email').value;
@@ -57,6 +31,7 @@
           document.getElementById('loginForm').style.display = 'none';
           document.getElementById('homePage').style.display = 'block';
           loadTableData();
+          loadWorkerData();
         })
         .catch((error) => {
           alert('Error: ' + error.message);
@@ -69,7 +44,7 @@
         document.getElementById('loginForm').style.display = 'none';
         document.getElementById('homePage').style.display = 'block';
         loadTableData();
-        displayAdminOptions(user);
+        loadWorkerData();
       } else {
         document.getElementById('loginForm').style.display = 'block';
         document.getElementById('homePage').style.display = 'none';
@@ -90,12 +65,8 @@
         const data = snapshot.val();
         if (data) {
           Object.keys(data).forEach((key) => {
-            // Exclude the 'availableWorkers' key from table rows
-            if (key === 'availableWorkers') {
-              return;
-            }
-
-            const item = data[key];
+        if (key === 'availableWorkers') return;
+        const item = data[key];
             const daysElapsed = calculateDaysElapsed(item.receivingDate);
 
             // Populate the home page table
@@ -107,6 +78,7 @@
               <td>${daysElapsed}</td>
               <td>${item.receivedQuantity || ''}</td>
               <td>${item.remainingQuantity || ''}</td>
+              <td>${item.timeNeeded || ''}</td>
             `;
             homeTableBody.appendChild(homeRow);
 
@@ -117,7 +89,7 @@
               <td>${item.species || ''}</td>
               <td>${item.receivingDate || ''}</td>
               <td>${item.remainingQuantity || ''}</td>
-              <td id="finishingDate_${key}"></td>
+              <td><input type="date" placeholder="Finishing Date"></td>
               <td><input type="date" placeholder="Expiration Date"></td>
               <td>
                 <button onclick="moveRowUp(this)">⬆️</button>
@@ -125,8 +97,6 @@
               </td>
             `;
             calcTableBody.appendChild(calcRow);
-
-            calculateFinishingDate(item, key);
 
             if (item.lastUpdated) {
               const itemTimestamp = new Date(item.lastUpdated);
@@ -150,91 +120,38 @@
       });
     }
 
+    // Load worker data
+    function loadWorkerData() {
+      const workerCountElement = document.getElementById('workerCount');
+      db.ref('/availableWorkers').on('value', (snapshot) => {
+        const count = snapshot.val() || 0;
+        workerCountElement.textContent = `Available Workers Today: ${count}`;
+      });
+    }
+
+    // Add available workers (Admin only)
+    function addAvailableWorkers() {
+      const user = auth.currentUser;
+      if (user && user.email === 'kumar@seaspire.com') { // Replace with your admin email
+        const workerCount = document.getElementById('workerInput').value;
+        db.ref('/availableWorkers').set(parseInt(workerCount, 10))
+          .then(() => {
+            alert('Available workers updated successfully');
+          })
+          .catch((error) => {
+            alert('Error updating workers: ' + error.message);
+          });
+      } else {
+        alert('You do not have permission to perform this action');
+      }
+    }
+
     function calculateDaysElapsed(receivingDate) {
       const today = new Date();
       const receivedDate = new Date(receivingDate);
       const timeDifference = today - receivedDate;
       const daysElapsed = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
       return daysElapsed >= 0 ? daysElapsed : 0;
-    }
-
-    function calculateFinishingDate(item, key) {
-      db.ref('/availableWorkers').once('value').then((snapshot) => {
-        const availableWorkers = parseInt(snapshot.val(), 10) || 0;
-        let remainingQuantity = parseFloat(item.remainingQuantity) || 0;
-        const species = item.species;
-
-        // Define man-hour requirements based on species
-        let manHourPerKg;
-        if (species.toLowerCase() === 'skipjacktuna') {
-          manHourPerKg = 35.25 / 1423;
-        } else if (species.toLowerCase() === 'yellowfintuna') {
-          manHourPerKg = 10 / 1000;
-        } else {
-          return; // Unsupported species
-        }
-
-        const requiredManHours = remainingQuantity * manHourPerKg;
-        let finishTime = new Date();
-        let hoursRemaining = requiredManHours / availableWorkers;
-
-        // Real-time start
-        let currentTime = new Date();
-        finishTime = new Date(currentTime);
-
-        // Check for OT availability
-        const otTableBody = document.getElementById('otTableBody');
-        let otHoursAvailable = 0;
-        let otConsidered = false;
-        [...otTableBody.rows].forEach(row => {
-          const otDate = new Date(row.cells[0].querySelector('input').value);
-          const otHours = parseFloat(row.cells[1].querySelector('input').value) || 0;
-          if (otDate.toDateString() === currentTime.toDateString()) {
-            otHoursAvailable = Math.min(6, otHours);
-            if (otHours > 3) otHoursAvailable -= 0.75; // Deduct extra time if OT > 3 hours
-            otConsidered = true;
-          }
-        });
-
-        // Calculate work hours per day
-        const dailyWorkingHours = 8.5; // 8:00 AM to 4:30 PM (no lunch hour considered)
-        let availableHoursToday = dailyWorkingHours;
-
-        if (currentTime.getHours() >= 8 && currentTime.getHours() < 12) {
-          availableHoursToday = Math.min(4.5, 12 - currentTime.getHours() - (currentTime.getMinutes() / 60));
-        } else if (currentTime.getHours() >= 13 && currentTime.getHours() < 16.5) {
-          availableHoursToday = Math.min(4.5, 16.5 - currentTime.getHours() - (currentTime.getMinutes() / 60));
-        } else {
-          availableHoursToday = 0;
-        }
-
-        if (otConsidered) {
-          availableHoursToday += otHoursAvailable;
-        }
-
-        while (hoursRemaining > 0) {
-          if (hoursRemaining <= availableHoursToday) {
-            finishTime.setHours(finishTime.getHours() + hoursRemaining);
-            hoursRemaining = 0;
-          } else {
-            finishTime.setHours(finishTime.getHours() + availableHoursToday);
-            hoursRemaining -= availableHoursToday;
-            availableHoursToday = dailyWorkingHours;
-            if (otConsidered) {
-              availableHoursToday += otHoursAvailable;
-            }
-            finishTime.setDate(finishTime.getDate() + 1);
-            finishTime.setHours(8); // Start the next day at 8:00 AM
-          }
-
-          // Check if the work crosses lunch hour
-          if (currentTime.getHours() <= 12 && finishTime.getHours() >= 13) {
-            hoursRemaining += 1; // Add one hour for lunch break
-          }
-        }
-
-        document.getElementById(`finishingDate_${key}`).textContent = finishTime.toLocaleString();
-      });
     }
 
     function formatTimestamp(timestamp) {
@@ -277,7 +194,7 @@
         <td><input type="text" placeholder="Species" style="width: 100%;"></td>
         <td><input type="date" style="width: 100%;"></td>
         <td><input type="text" placeholder="Remaining Quantity" style="width: 100%;"></td>
-        <td><span>Calculating...</span></td>
+        <td><input type="date" style="width: 100%;"></td>
         <td><input type="date" style="width: 100%;"></td>
         <td>
           <button onclick="moveRowUp(this)" style="width: 48%;">⬆️</button>
@@ -299,7 +216,7 @@
       const row = button.parentElement.parentElement;
       const nextRow = row.nextElementSibling;
       if (nextRow) {
-        row.parentNode.insertBefore(row, nextRow);
+        row.parentNode.insertBefore(nextRow, row);
       }
     }
 
@@ -509,14 +426,16 @@
     .add-row-btn {
       margin-top: 10px;
     }
-    #adminOptions {
-      display: none;
-      margin: 20px;
-      text-align: center;
-    }
-    #adminOptions input {
-      padding: 5px;
-      margin-right: 10px;
+    .worker-count {
+      position: absolute;
+      top: 50px;
+      right: 10px;
+      background-color: #ffcc00;
+	  color: #000000;
+      padding: 10px;
+      border-radius: 5px;
+      font-weight: bold;
+      font-size: 14px;
     }
   </style>
 </head>
@@ -537,6 +456,7 @@
         <a href="#">DAILY REPORT</a>
         <button onclick="logout()">Logout</button>
       </div>
+      
     </nav>
     <div class="content">
       <div id="lastUpdate">Last Update: Loading...</div>
@@ -550,6 +470,7 @@
             <th>DAYS ELAPSED</th>
             <th>RECEIVED QUANTITY</th>
             <th>REMAINING QUANTITY</th>
+            <th>TIME NEEDED FOR FINISH</th>
           </tr>
         </thead>
         <tbody>
@@ -557,18 +478,17 @@
         </tbody>
       </table>
       <button class="calculate-btn" onclick="showCalculatePage()">Click here for calculate finishing date</button>
+      <div>
+        <input type="number" id="workerInput" placeholder="Number of workers" style="width: 200px;">
+        <button onclick="addAvailableWorkers()">Update Available Workers</button>
+      </div>
     </div>
-  </div>
-
-  <div id="adminOptions">
-    <h3>Admin Options</h3>
-    <input type="number" id="workerCount" placeholder="Daily Available Workers">
-    <button onclick="updateWorkerCount()">Update Worker Count</button>
   </div>
 
   <div id="calculatePage" style="display: none;">
     <nav>
       <h1>Calculate</h1>
+      <label id="workerCount" class="worker-count">Available Workers Today: Loading...</label>
       <div>
         <a href="javascript:void(0);" onclick="showHomePage()">HOME PAGE</a>
         <a href="#">STOCK</a>
@@ -658,4 +578,8 @@
           </table>
           <button class="add-row-btn" onclick="addNewOtherWorksRow()">Add New Row</button>
         </div>
-     
+      </div>
+    </div>
+  </div>
+</body>
+</html>
