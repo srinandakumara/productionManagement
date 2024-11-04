@@ -65,8 +65,8 @@
         const data = snapshot.val();
         if (data) {
           Object.keys(data).forEach((key) => {
-        if (key === 'availableWorkers') return;
-        const item = data[key];
+            if (key === 'availableWorkers') return;
+            const item = data[key];
             const daysElapsed = calculateDaysElapsed(item.receivingDate);
 
             // Populate the home page table
@@ -89,7 +89,7 @@
               <td>${item.species || ''}</td>
               <td>${item.receivingDate || ''}</td>
               <td>${item.remainingQuantity || ''}</td>
-              <td><input type="date" placeholder="Finishing Date"></td>
+              <td><input type="text" placeholder="Finishing Time" readonly></td>
               <td><input type="date" placeholder="Expiration Date"></td>
               <td>
                 <button onclick="moveRowUp(this)">⬆️</button>
@@ -97,6 +97,8 @@
               </td>
             `;
             calcTableBody.appendChild(calcRow);
+
+            calculateFinishingTime(item, calcRow);
 
             if (item.lastUpdated) {
               const itemTimestamp = new Date(item.lastUpdated);
@@ -126,6 +128,31 @@
       db.ref('/availableWorkers').on('value', (snapshot) => {
         const count = snapshot.val() || 0;
         workerCountElement.textContent = `Available Workers Today: ${count}`;
+      });
+    }
+
+    // Calculate Finishing Time
+    function calculateFinishingTime(item, calcRow) {
+      db.ref('/availableWorkers').once('value').then((snapshot) => {
+        const availableWorkers = snapshot.val() || 0;
+        let manHoursRequired = 0;
+        const remainingQuantity = parseFloat(item.remainingQuantity); // Parse remaining quantity as a number
+
+        if (isNaN(remainingQuantity)) {
+          return;
+        }
+
+        if (item.species === 'Skipjack') {
+          manHoursRequired = (remainingQuantity / 1423) * 35.25;
+        } else if (item.species === 'Tuna') {
+          manHoursRequired = (remainingQuantity / 1000) * 10;
+        }
+
+        if (availableWorkers > 0) {
+          const hoursRequired = manHoursRequired / availableWorkers;
+          const finishingTimeInput = calcRow.querySelector('input[placeholder="Finishing Time"]');
+          finishingTimeInput.value = `${hoursRequired.toFixed(2)} hours`;
+        }
       });
     }
 
@@ -194,7 +221,7 @@
         <td><input type="text" placeholder="Species" style="width: 100%;"></td>
         <td><input type="date" style="width: 100%;"></td>
         <td><input type="text" placeholder="Remaining Quantity" style="width: 100%;"></td>
-        <td><input type="date" style="width: 100%;"></td>
+        <td><input type="text" placeholder="Finishing Time" readonly style="width: 100%;"></td>
         <td><input type="date" style="width: 100%;"></td>
         <td>
           <button onclick="moveRowUp(this)" style="width: 48%;">⬆️</button>
@@ -202,6 +229,13 @@
         </td>
       `;
       tableBody.appendChild(newRow);
+
+      // Calculate finishing time for the new row
+      const item = {
+        species: newRow.querySelector('input[placeholder="Species"]').value,
+        remainingQuantity: newRow.querySelector('input[placeholder="Remaining Quantity"]').value
+      };
+      calculateFinishingTime(item, newRow);
     }
 
     function moveRowUp(button) {
@@ -216,7 +250,7 @@
       const row = button.parentElement.parentElement;
       const nextRow = row.nextElementSibling;
       if (nextRow) {
-        row.parentNode.insertBefore(nextRow, row);
+        row.parentNode.insertBefore(row, nextRow);
       }
     }
 
@@ -508,7 +542,7 @@
               <th>SPECIES</th>
               <th>RECEIVING DATE</th>
               <th>REMAINING QUANTITY</th>
-              <th>FINISHING DATE</th>
+              <th>FINISHING TIME</th>
               <th>EXPIRATION WHEN FINISH</th>
               <th>ACTIONS</th>
             </tr>
