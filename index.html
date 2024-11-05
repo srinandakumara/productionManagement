@@ -32,6 +32,7 @@
           document.getElementById('homePage').style.display = 'block';
           loadTableData();
           loadWorkerData();
+          startFinishingTimeUpdate();
         })
         .catch((error) => {
           alert('Error: ' + error.message);
@@ -45,6 +46,14 @@
         document.getElementById('homePage').style.display = 'block';
         loadTableData();
         loadWorkerData();
+        startFinishingTimeUpdate();
+
+        // Show admin controls if the user is the admin
+        if (user.email === 'kumar@seaspire.com') { // Replace with your admin email
+          document.getElementById('adminControls').style.display = 'block';
+        } else {
+          document.getElementById('adminControls').style.display = 'none';
+        }
       } else {
         document.getElementById('loginForm').style.display = 'block';
         document.getElementById('homePage').style.display = 'none';
@@ -133,35 +142,130 @@
     }
 
     // Update Finishing Time for all rows
-    function updateFinishingTimes() {
-      const rows = Array.from(document.getElementById('calculationTableBody').children);
-      let cumulativeTime = 0;
-      db.ref('/availableWorkers').once('value').then((snapshot) => {
-        const availableWorkers = snapshot.val() || 0;
-        rows.forEach((row, index) => {
-          const species = row.children[1].querySelector('input') ? row.children[1].querySelector('input').value : row.children[1].textContent;
-          const remainingQuantity = parseFloat(row.children[3].querySelector('input') ? row.children[3].querySelector('input').value : row.children[3].textContent);
-          let manHoursRequired = 0;
+	function updateFinishingTimes() {
+	  const rows = Array.from(document.getElementById('calculationTableBody').children);
+	  let cumulativeTime = 0;
 
-          if (isNaN(remainingQuantity)) {
-            return;
-          }
+	  db.ref('/availableWorkers').once('value').then((snapshot) => {
+		const availableWorkers = snapshot.val() || 0;
 
-          if (species === 'Skipjack') {
-            manHoursRequired = (remainingQuantity / 1423) * 35.25;
-          } else if (species === 'Tuna') {
-            manHoursRequired = (remainingQuantity / 1000) * 10;
-          }
+		// Get OT rows to calculate any overtime
+		const otRows = Array.from(document.getElementById('otTableBody').children);
+		const overtimeMap = new Map();
+		otRows.forEach((otRow) => {
+		  const otDate = otRow.querySelector('input[type="date"]').value;
+		  const otHoursValue = parseFloat(otRow.querySelector('input[type="number"]').value);
+		  if (otDate && otHoursValue) {
+			overtimeMap.set(otDate, otHoursValue);
+		  }
+		});
 
-          if (availableWorkers > 0) {
-            const hoursRequired = manHoursRequired / availableWorkers;
-            cumulativeTime += hoursRequired;
-            const finishingTimeInput = row.querySelector('input[placeholder="Finishing Time"]');
-            finishingTimeInput.value = `${cumulativeTime.toFixed(2)} hours`;
-          }
-        });
-      });
-    }
+		rows.forEach((row) => {
+		  const species = row.children[1].querySelector('input') ? row.children[1].querySelector('input').value : row.children[1].textContent;
+		  const remainingQuantity = parseFloat(row.children[3].querySelector('input') ? row.children[3].querySelector('input').value : row.children[3].textContent);
+		  let manHoursRequired = 0;
+
+		  if (isNaN(remainingQuantity)) {
+			return;
+		  }
+
+		  if (species === 'Skipjack') {
+			manHoursRequired = (remainingQuantity / 1423) * 35.25;
+		  } else if (species === 'Tuna') {
+			manHoursRequired = (remainingQuantity / 1000) * 10;
+		  }
+
+		  if (availableWorkers > 0) {
+			const hoursRequired = manHoursRequired / availableWorkers;
+			cumulativeTime += hoursRequired;
+
+			// Calculate finishing time by adding cumulative time to the current time, considering only working hours
+			const finishingTimeInput = row.querySelector('input[placeholder="Finishing Time"]');
+			let finishTime = new Date(); // Start from the current time
+
+			let hoursToAdd = cumulativeTime;
+
+			while (hoursToAdd > 0) {
+			  const currentHour = finishTime.getHours();
+			  const currentDate = finishTime.toISOString().split('T')[0];
+			  const overtimeHours = overtimeMap.get(currentDate) || 0;
+
+			  // If before work hours, set to 8 AM
+			  if (currentHour < 8) {
+				finishTime.setHours(8, 0, 0, 0);
+				continue;
+			  }
+
+			  // If after work hours (4:30 PM + OT), move to next day at 8:00 AM
+			  const endHour = 16 + overtimeHours;
+			  const endMinute = 30;
+
+			  if (currentHour > endHour || (currentHour === endHour && finishTime.getMinutes() >= endMinute)) {
+				finishTime.setDate(finishTime.getDate() + 1);
+				finishTime.setHours(8, 0, 0, 0);
+				continue;
+			  }
+
+			  // Check if the calculated time falls within the lunch break (12 PM - 1 PM)
+			  if (currentHour === 12) {
+				finishTime.setHours(13, 0, 0, 0);
+				continue;
+			  }
+
+			  // Check if the calculated time falls within the dinner break (8 PM - 8:45 PM)
+			  if (currentHour === 20 && finishTime.getMinutes() < 45) {
+				finishTime.setHours(20, 45, 0, 0);
+				continue;
+			  }
+
+			  // Calculate remaining time in the current work period
+			  let endOfWorkDay = new Date(finishTime);
+			  endOfWorkDay.setHours(endHour, endMinute, 0, 0);
+			  let timeUntilEndOfWorkDay = (endOfWorkDay - finishTime) / (1000 * 60 * 60); // Time until end of workday in hours
+
+			  if (hoursToAdd <= timeUntilEndOfWorkDay) {
+				// If hours to add fit within the current work period
+				finishTime.setHours(finishTime.getHours() + Math.floor(hoursToAdd));
+				finishTime.setMinutes(finishTime.getMinutes() + Math.floor((hoursToAdd % 1) * 60));
+				hoursToAdd = 0;
+			  } else {
+				// If hours to add exceed the current work period, move to end of day and continue
+				finishTime = endOfWorkDay;
+				hoursToAdd -= timeUntilEndOfWorkDay;
+			  }
+			}
+
+			// If the finishing time falls in the lunch break, add one hour
+			if (finishTime.getHours() >= 12 && finishTime.getHours() < 13) {
+			  finishTime.setHours(13, finishTime.getMinutes(), 0, 0);
+			}
+
+			// If the finishing time falls in the dinner break, add 45 minutes
+			if (finishTime.getHours() === 20 && finishTime.getMinutes() < 45) {
+			  finishTime.setHours(20, 45, 0, 0);
+			} else if (finishTime.getHours() === 20 && finishTime.getMinutes() >= 45) {
+			  // If dinner break is over but finishing time still falls in the current hour, continue
+			  finishTime.setMinutes(finishTime.getMinutes() + 45);
+			}
+
+			// Format the finishing time with date
+			const dateOptions = {
+			  year: 'numeric',
+			  month: 'numeric',
+			  day: 'numeric'
+			};
+			const formattedDate = finishTime.toLocaleDateString('en-US', dateOptions);
+
+			let hours = finishTime.getHours();
+			const minutes = finishTime.getMinutes().toString().padStart(2, '0');
+			const ampm = hours >= 12 ? 'pm' : 'am';
+			hours = hours % 12 || 12; // Convert to 12-hour format, ensuring 12 instead of 0
+			finishingTimeInput.value = `${formattedDate}, ${hours}:${minutes} ${ampm}`;
+		  }
+		});
+	  });
+	}
+
 
     // Add available workers (Admin only)
     function addAvailableWorkers() {
@@ -272,14 +376,41 @@
     function addNewOTRow() {
       const tableBody = document.getElementById('otTableBody');
       const newRow = document.createElement('tr');
+
+      // Calculate the new date
+      let newDate;
+      if (tableBody.children.length === 0) {
+        // First row, use today's date
+        newDate = new Date();
+      } else {
+        // Get the date from the last row and add one day
+        const lastRow = tableBody.children[tableBody.children.length - 1];
+        const lastDateString = lastRow.querySelector('input[type="date"]').value;
+        const lastDate = new Date(lastDateString);
+        newDate = new Date(lastDate);
+        newDate.setDate(newDate.getDate() + 1); // Add one day
+      }
+
+      // Format the new date as yyyy-mm-dd for the input field
+      const formattedDate = newDate.toISOString().split('T')[0];
+
       newRow.innerHTML = `
-        <td><input type="date" style="width: 100%;"></td>
-        <td><input type="text" placeholder="OT Hours" style="width: 100%;"></td>
+        <td><input type="date" style="width: 100%;" value="${formattedDate}"></td>
+        <td><input type="number" min="0" max="6" placeholder="OT Hours" style="width: 100%;"></td>
         <td>
           <button onclick="deleteRow(this)" style="width: 100%;">🗑️</button>
         </td>
       `;
       tableBody.appendChild(newRow);
+
+      // Attach an input listener to restrict OT hours to a maximum of 6 and trigger finishing time update
+      const otHoursInput = newRow.querySelector('input[type="number"]');
+      otHoursInput.addEventListener('input', () => {
+        if (otHoursInput.value > 6) {
+          otHoursInput.value = 6; // Set to max value if greater than 6
+        }
+        updateFinishingTimes(); // Trigger finishing time update after input change
+      });
     }
 
     // Add a new row to ICE Loading table
@@ -319,6 +450,140 @@
       row.remove();
       updateFinishingTimes();
     }
+
+    // Start interval to update finishing times every minute
+    function startFinishingTimeUpdate() {
+      setInterval(() => {
+        const rows = Array.from(document.getElementById('calculationTableBody').children);
+
+        // Get OT rows to calculate any overtime
+        const otRows = Array.from(document.getElementById('otTableBody').children);
+        const overtimeMap = new Map();
+        otRows.forEach((otRow) => {
+          const otDate = otRow.querySelector('input[type="date"]').value;
+          const otHoursValue = parseFloat(otRow.querySelector('input[type="number"]').value);
+          if (otDate && otHoursValue) {
+            overtimeMap.set(otDate, otHoursValue);
+          }
+        });
+
+        rows.forEach((row) => {
+          const finishingTimeInput = row.querySelector('input[placeholder="Finishing Time"]');
+          if (finishingTimeInput && finishingTimeInput.value) {
+            // Parse existing finishing time to Date object
+            const [datePart, timePart] = finishingTimeInput.value.split(', ');
+            const [month, day, year] = datePart.split('/').map(Number);
+            const [time, ampm] = timePart.split(/(am|pm)/);
+            let [hours, minutes] = time.split(':').map(Number);
+            if (ampm.trim() === 'pm' && hours !== 12) {
+              hours += 12;
+            } else if (ampm.trim() === 'am' && hours === 12) {
+              hours = 0;
+            }
+
+            // Create a Date object and add 1 minute
+            let finishTime = new Date(year, month - 1, day, hours, minutes);
+            finishTime.setMinutes(finishTime.getMinutes() + 1);
+
+            // Adjust for lunch break (12 PM - 1 PM)
+            if (finishTime.getHours() >= 12 && finishTime.getHours() < 13) {
+              finishTime.setHours(13, finishTime.getMinutes(), 0, 0);
+            }
+
+            // Adjust for dinner break (8 PM - 8:45 PM)
+            if (finishTime.getHours() >= 20 && finishTime.getHours() < 21) {
+              finishTime.setHours(20, 45, 0, 0);
+            }
+
+            // Determine end of workday based on OT hours
+            const currentDate = finishTime.toISOString().split('T')[0];
+            const overtimeHours = overtimeMap.get(currentDate) || 0;
+            const endHour = 16 + overtimeHours;
+            const endMinute = 30;
+
+            // Adjust for after work hours (4:30 PM + OT) - move to the next workday at 8:00 AM
+            if (finishTime.getHours() > endHour || (finishTime.getHours() === endHour && finishTime.getMinutes() >= endMinute)) {
+              finishTime.setDate(finishTime.getDate() + 1);
+              finishTime.setHours(8, 0, 0, 0);
+
+              // If it is a weekend (Saturday or Sunday), move to the following Monday at 8:00 AM
+              if (finishTime.getDay() === 6) {
+                // If Saturday, move to Monday
+                finishTime.setDate(finishTime.getDate() + 2);
+              } else if (finishTime.getDay() === 0) {
+                // If Sunday, move to Monday
+                finishTime.setDate(finishTime.getDate() + 1);
+              }
+            }
+
+            // Format the updated time
+            const dateOptions = {
+              year: 'numeric',
+              month: 'numeric',
+              day: 'numeric'
+            };
+            const formattedDate = finishTime.toLocaleDateString('en-US', dateOptions);
+
+            let updatedHours = finishTime.getHours();
+            const updatedMinutes = finishTime.getMinutes().toString().padStart(2, '0');
+            const updatedAmpm = updatedHours >= 12 ? 'pm' : 'am';
+            updatedHours = updatedHours % 12 || 12; // Convert to 12-hour format, ensuring 12 instead of 0
+
+            // Update the input field with the new value
+            finishingTimeInput.value = `${formattedDate}, ${updatedHours}:${updatedMinutes} ${updatedAmpm}`;
+          }
+        });
+      }, 60000); // Update every minute
+    }
+	// Function to calculate time needed for ice loading based on ice bags and people involved
+function updateIceLoadingTimes() {
+  const rows = Array.from(document.getElementById('iceLoadingTableBody').children);
+  rows.forEach((row) => {
+    const iceBagQtyInput = row.children[1].querySelector('input');
+    const peopleInput = row.children[2].querySelector('input');
+    const timeNeedInput = row.children[3].querySelector('input');
+
+    const iceBagQty = parseInt(iceBagQtyInput.value, 10);
+    const peopleCount = parseInt(peopleInput.value, 10);
+
+    if (!isNaN(iceBagQty) && !isNaN(peopleCount) && peopleCount > 0) {
+      // Calculation for time needed: (20/35) * 4 * iceBagQty / peopleCount
+      const totalTime = (20 / 35) * 4 * iceBagQty / peopleCount;
+      const hours = Math.floor(totalTime / 60);
+      const minutes = Math.floor(totalTime % 60);
+      timeNeedInput.value = `${hours > 0 ? hours + ' hr ' : ''}${minutes} min`;
+    } else {
+      timeNeedInput.value = '';
+    }
+  });
+}
+
+	// Update function to attach event listeners for real-time calculation
+	function addNewIceLoadingRow() {
+	  const tableBody = document.getElementById('iceLoadingTableBody');
+	  const newRow = document.createElement('tr');
+	  newRow.innerHTML = `
+		<td><input type="date" style="width: 100%;"></td>
+		<td><input type="text" placeholder="Ice Bag Qty" style="width: 100%;"></td>
+		<td><input type="text" placeholder="Peoples" style="width: 100%;"></td>
+		<td><input type="text" placeholder="Time Need" style="width: 100%;" readonly></td>
+		<td>
+		  <button onclick="deleteRow(this)" style="width: 100%;">🗑️</button>
+		</td>
+	  `;
+	  tableBody.appendChild(newRow);
+
+	  // Attach event listeners for real-time updates
+	  const iceBagQtyInput = newRow.children[1].querySelector('input');
+	  const peopleInput = newRow.children[2].querySelector('input');
+
+	  iceBagQtyInput.addEventListener('input', updateIceLoadingTimes);
+	  peopleInput.addEventListener('input', updateIceLoadingTimes);
+	}
+
+	// Call updateIceLoadingTimes periodically or after any significant change
+	setInterval(updateIceLoadingTimes, 60000); // Update every minute to keep times accurate
+
   </script>
   <style>
     body {
@@ -480,7 +745,7 @@
       top: 50px;
       right: 10px;
       background-color: #ffcc00;
-	  color: #000000;
+      color: #000000;
       padding: 10px;
       border-radius: 5px;
       font-weight: bold;
@@ -500,12 +765,11 @@
     <nav>
       <h1>Home Page</h1>
       <div>
-        <a href="javascript:void(0);" onclick="showCalculatePage()">STOCK</a>
+        <a href="stock.html">STOCK</a>
         <a href="#">TODAY PLAN</a>
         <a href="#">DAILY REPORT</a>
         <button onclick="logout()">Logout</button>
       </div>
-      
     </nav>
     <div class="content">
       <div id="lastUpdate">Last Update: Loading...</div>
@@ -527,7 +791,7 @@
         </tbody>
       </table>
       <button class="calculate-btn" onclick="showCalculatePage()">Click here for calculate finishing date</button>
-      <div>
+      <div id="adminControls" style="display: none;">
         <input type="number" id="workerInput" placeholder="Number of workers" style="width: 200px;">
         <button onclick="addAvailableWorkers()">Update Available Workers</button>
       </div>
@@ -540,7 +804,7 @@
       <label id="workerCount" class="worker-count">Available Workers Today: Loading...</label>
       <div>
         <a href="javascript:void(0);" onclick="showHomePage()">HOME PAGE</a>
-        <a href="#">STOCK</a>
+        <a href="stock.html">STOCK</a>
         <a href="#">TODAY PLAN</a>
         <a href="#">DAILY REPORT</a>
         <button onclick="logout()">Logout</button>
@@ -632,3 +896,4 @@
   </div>
 </body>
 </html>
+
