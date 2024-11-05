@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Page</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+  <script>
+    // Your Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyBfgw55oz008_Du9yGq8uWFes9hp2bG0nQ",
+      authDomain: "productionmanagement-fd409.firebaseapp.com",
+      projectId: "productionmanagement-fd409",
+      storageBucket: "productionmanagement-fd409.appspot.com",
+      messagingSenderId: "1093616249374",
+      appId: "1:1093616249374:web:8a8b50821b1ac9ba4fdc0f"
+    };
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Function to load file download links from Firebase Realtime Database
+    function loadDownloadLinks() {
+      const stockLinksRef = db.ref('stockLinks');
+      stockLinksRef.once('value')
+        .then((snapshot) => {
+          const data = snapshot.val();
+          if (data) {
+            Object.keys(data).forEach((key) => {
+              const item = data[key];
+              const listItem = document.createElement('li');
+              listItem.innerHTML = `<a href="${item.url}" download>${item.name}</a>`;
+              document.getElementById('downloadList').appendChild(listItem);
+            });
+          }
+        })
+        .catch((error) => {
+          console.error('Error fetching data:', error);
+        });
+    }
+
+    // Load download links when the page loads
+    window.onload = loadDownloadLinks;
+  </script>
+</head>
+<body>
+  <nav>
+    <h1>Stock Page</h1>
+    <div>
+      <a href="index.html">HOME PAGE</a>
+      <a href="stock.html">STOCK</a>
+      <a href="#">TODAY PLAN</a>
+      <a href="#">DAILY REPORT</a>
+      <button onclick="logout()">Logout</button>
+    </div>
+  </nav>
+  <div class="content">
+    <h2>Welcome to the Stock Page</h2>
+    <p>Click below to download the available Excel files:</p>
+    <ul id="downloadList">
+      <!-- Links will be dynamically added here -->
+    </ul>
+  </div>
+</body>
+</html>
