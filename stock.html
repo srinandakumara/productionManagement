@@ -3,11 +3,144 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Stock Page</title>
+  <title>Downloads</title>
   <link rel="stylesheet" href="styles.css">
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
+  <style>
+    /* Top Navigation Bar */
+	nav {
+	  background-color: #6a1b9a;
+	  color: white;
+	  padding: 10px;
+	  display: flex;
+	  justify-content: space-between;
+	  align-items: center;
+	}
+
+	nav h1 {
+	  margin: 0;
+	}
+
+	nav div a, nav div button {
+	  color: white;
+	  margin-left: 15px;
+	  text-decoration: none;
+	  font-weight: bold;
+	  border: none;
+	  background: none;
+	  cursor: pointer;
+	}
+
+	nav div button {
+	  background-color: #4caf50;
+	  padding: 8px 12px;
+	  border-radius: 5px;
+	}
+
+	/* Content Section */
+	.content {
+	  padding: 20px;
+	}
+
+	.download-container {
+	  display: flex;
+	  flex-wrap: wrap; /* Added */
+	  align-items: center;
+	  padding: 30px 0;
+	  margin: 0;
+	  position: relative;
+	}
+
+	.download-container:first-of-type::before,
+	.download-container::after {
+	  content: '';
+	  position: absolute;
+	  left: 0;
+	  right: 0;
+	  height: 2px;
+	  background: #ddd;
+	}
+
+	.download-container:first-of-type::before {
+	  top: 0;
+	}
+
+	.download-container::after {
+	  bottom: 0;
+	}
+
+	.download-container:not(:last-of-type)::after {
+	  background: #ddd;
+	}
+
+	.download-container img {
+	  width: 80px;
+	  height: auto; /* Modified */
+	  max-width: 100%; /* Added */
+	  object-fit: cover;
+	  margin-right: 20px;
+	}
+
+	.download-info {
+	  flex-grow: 1;
+	}
+
+	.download-info h3 {
+	  margin: 0;
+	}
+
+	.download-button {
+	  background-color: #4caf50;
+	  color: white;
+	  padding: 10px 20px;
+	  border: none;
+	  border-radius: 5px;
+	  cursor: pointer;
+	  text-decoration: none;
+	}
+
+	/* Responsive Styles */
+	@media (max-width: 600px) {
+	  .download-container {
+		flex-direction: column;
+		align-items: flex-start;
+		padding: 15px 0;
+	  }
+
+	  .download-container img {
+		width: 100%;
+		margin-right: 0;
+		margin-bottom: 10px;
+	  }
+
+	  .download-button {
+		width: 100%;
+		text-align: center;
+		margin-top: 10px;
+	  }
+
+	  nav div {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+	  }
+
+	  nav div a, nav div button {
+		margin-left: 0;
+		margin-bottom: 10px;
+	  }
+
+	  .download-info h3 {
+		font-size: 1.2em;
+	  }
+
+	  .download-info p {
+		font-size: 1em;
+	  }
+	}
+  </style>
   <script>
     // Your Firebase configuration
     const firebaseConfig = {
@@ -18,51 +151,110 @@
       messagingSenderId: "1093616249374",
       appId: "1:1093616249374:web:8a8b50821b1ac9ba4fdc0f"
     };
+
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    const db = firebase.firestore();
+    const auth = firebase.auth();
 
-    // Function to load file download links from Firebase Realtime Database
+    // Function to authenticate anonymously and then load download links
+    function authenticateAndLoadLinks() {
+      auth.onAuthStateChanged((user) => {
+        if (user) {
+          console.log('User authenticated successfully:', user);
+          loadDownloadLinks(); // Load links after authentication is confirmed
+        } else {
+          console.log('No user is signed in. Signing in anonymously...');
+          auth.signInAnonymously()
+            .then((result) => {
+              console.log('User signed in anonymously:', result.user);
+              loadDownloadLinks(); // Load links after successful anonymous sign-in
+            })
+            .catch((error) => {
+              console.error('Error signing in anonymously:', error);
+            });
+        }
+      });
+    }
+
+    // Function to load file download links from Firestore
     function loadDownloadLinks() {
-      const stockLinksRef = db.ref('stockLinks');
-      stockLinksRef.once('value')
-        .then((snapshot) => {
-          const data = snapshot.val();
-          if (data) {
-            Object.keys(data).forEach((key) => {
-              const item = data[key];
-              const listItem = document.createElement('li');
-              listItem.innerHTML = `<a href="${item.url}" download>${item.name}</a>`;
-              document.getElementById('downloadList').appendChild(listItem);
+      console.log('Loading download links...');
+      const linksRef = db.collection('Links');
+      linksRef.get()
+        .then((querySnapshot) => {
+          const downloadList = document.getElementById('downloadList');
+          if (querySnapshot.empty) {
+            console.log('No documents found in the Links collection.');
+          } else {
+            querySnapshot.forEach((doc) => {
+              const data = doc.data();
+              console.log(`Loading data for document: ${doc.id}`, data); // Debugging output
+              createDownloadBlock(data, downloadList);
             });
           }
         })
         .catch((error) => {
-          console.error('Error fetching data:', error);
+          console.error('Error fetching data from Firestore:', error);
         });
     }
 
-    // Load download links when the page loads
-    window.onload = loadDownloadLinks;
+    // Function to create a download block dynamically
+    function createDownloadBlock(data, parentElement) {
+      const downloadContainer = document.createElement('div');
+      downloadContainer.classList.add('download-container');
+
+      // Add image
+      const img = document.createElement('img');
+      img.src = data.image || 'default-image.png'; // Use default image if no URL is provided
+      img.alt = 'Link image here';
+      downloadContainer.appendChild(img);
+
+      // Add information
+      const infoDiv = document.createElement('div');
+      infoDiv.classList.add('download-info');
+      const title = document.createElement('h3');
+      title.textContent = data.name;
+      const lastUpdate = document.createElement('p');
+      lastUpdate.textContent = `Last Update: ${data.latestUpdate}`;
+      infoDiv.appendChild(title);
+      infoDiv.appendChild(lastUpdate);
+      downloadContainer.appendChild(infoDiv);
+
+      // Add download button
+      const downloadButton = document.createElement('a');
+      downloadButton.href = data.url;
+      downloadButton.classList.add('download-button');
+      downloadButton.textContent = 'DOWNLOAD';
+      downloadContainer.appendChild(downloadButton);
+
+      // Append to the content section
+      parentElement.appendChild(downloadContainer);
+    }
+
+    // Authenticate and load download links when the page loads
+    window.onload = authenticateAndLoadLinks;
   </script>
 </head>
 <body>
+  <!-- Top Navigation Bar -->
   <nav>
-    <h1>Stock Page</h1>
+    <h1>Downloads</h1>
     <div>
-      <a href="index.html">HOME PAGE</a>
-      <a href="stock.html">STOCK</a>
-      <a href="#">TODAY PLAN</a>
-      <a href="#">DAILY REPORT</a>
+      <a href="index.html#homePage">HOME PAGE</a>
+	  <a href="index.html#calculatePage">CALCULATE</a>
+      <a href="today-plan.html">TODAY PLAN</a>
+      <a href="daily-report.html">DAILY REPORT</a>
       <button onclick="logout()">Logout</button>
     </div>
   </nav>
+
+  <!-- Content Section -->
   <div class="content">
-    <h2>Welcome to the Stock Page</h2>
-    <p>Click below to download the available Excel files:</p>
-    <ul id="downloadList">
-      <!-- Links will be dynamically added here -->
-    </ul>
+    <h2>Available Downloads</h2>
+    <div id="downloadList">
+      <!-- Download blocks will be dynamically added here -->
+    </div>
   </div>
 </body>
 </html>
