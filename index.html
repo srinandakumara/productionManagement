@@ -7,6 +7,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
   <script>
     // Your Firebase configuration
     const firebaseConfig = {
@@ -19,7 +20,7 @@
     };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
-    const db = firebase.database();
+    const db = firebase.firestore();
 
     // Login function
     function login() {
@@ -67,18 +68,13 @@
 	  const calcTableBody = document.getElementById('calculationTableBody');
 	  const lastUpdateElement = document.getElementById('lastUpdate');
 
-	  db.ref('/').on('value', (snapshot) => {
+	  db.collection('GRNs').onSnapshot((querySnapshot) => {
 		homeTableBody.innerHTML = '';
 		calcTableBody.innerHTML = '';
-		const data = snapshot.val();
-		if (data) {
-		  Object.keys(data).forEach((key) => {
-			// Only process keys that represent GRN collections (assuming they are numeric)
-			if (isNaN(key)) {
-			  return;
-			}
 
-			const item = data[key];
+		if (!querySnapshot.empty) {
+		  querySnapshot.forEach((doc) => {
+			const item = doc.data();
 			const daysElapsed = calculateDaysElapsed(item.receivingDate);
 
 			// Populate the home page table
@@ -121,34 +117,43 @@
 		lastUpdateElement.textContent = 'Failed to load data';
 	  });
 
-	  // Fetch the last updated timestamp from Firebase
-		db.ref('/lastUpdated').on('value', (snapshot) => {
-		  const lastUpdatedValue = snapshot.val();
-		  if (lastUpdatedValue) {
+	  db.collection('Workers').doc('Update').onSnapshot((doc) => {
+		if (doc.exists) {
+			const lastUpdatedValue = doc.data().lastUpdated;
 			lastUpdateElement.textContent = `Last Update: ${formatTimestamp(lastUpdatedValue)}`;
-		  } else {
+		} else {
 			lastUpdateElement.textContent = 'Last Update: No timestamp available';
-		  }
-		});
+		}
+	});
 	}
 
     // Load worker data
     function loadWorkerData() {
-      const workerCountElement = document.getElementById('workerCount');
-      db.ref('/availableWorkers').on('value', (snapshot) => {
-        const count = snapshot.val() || 0;
-        workerCountElement.textContent = `Available Workers Today: ${count}`;
-        updateFinishingTimes();
-      });
-    }
+	  const workerCountElement = document.getElementById('workerCount');
+
+	  // Listen for real-time updates to the w1 document in the Workers collection
+	  db.collection('Workers').doc('w1').onSnapshot((doc) => {
+		if (doc.exists) {
+		  const count = doc.data().availableWorkers || 0;
+		  workerCountElement.textContent = `Available Workers Today: ${count}`;
+		  updateFinishingTimes();
+		} else {
+		  console.log('No such document!');
+		  workerCountElement.textContent = 'Available Workers Today: 0';
+		}
+	  }, (error) => {
+		console.error('Error fetching worker data:', error);
+		workerCountElement.textContent = 'Failed to load worker data';
+	  });
+	}
 
     // Update Finishing Time for all rows
 	function updateFinishingTimes() {
 	  const rows = Array.from(document.getElementById('calculationTableBody').children);
 	  let cumulativeTime = 0;
 
-	  db.ref('/availableWorkers').once('value').then((snapshot) => {
-		const availableWorkers = snapshot.val() || 0;
+	  db.collection('Workers').doc('w1').get().then((doc) => {
+		const availableWorkers = doc.exists ? doc.data().availableWorkers || 0 : 0;
 
 		// Get OT rows to calculate any overtime
 		const otRows = Array.from(document.getElementById('otTableBody').children);
@@ -285,35 +290,46 @@
 	  const homeTableBody = document.querySelector('#dataTable tbody');
 	  const rows = Array.from(homeTableBody.children);
 
-	  db.ref('/availableWorkers').once('value').then((snapshot) => {
-		const availableWorkers = snapshot.val() || 1; // Default to 1 to avoid division by zero
+	  // Use onSnapshot to listen for real-time updates to the availableWorkers field
+	  db.collection('Workers').doc('w1').onSnapshot((doc) => {
+		if (doc.exists) {
+		  const availableWorkers = doc.data().availableWorkers || 1;
 
-		rows.forEach((row) => {
-		  const species = row.children[1].textContent;
-		  const remainingQuantity = parseFloat(row.children[5].textContent);
+		  rows.forEach((row) => {
+			const species = row.children[1].textContent;
+			const remainingQuantity = parseFloat(row.children[5].textContent);
 
-		  if (isNaN(remainingQuantity) || remainingQuantity <= 0) {
-			row.children[6].textContent = 'Invalid Quantity';
-			return;
-		  }
+			if (isNaN(remainingQuantity) || remainingQuantity <= 0) {
+			  row.children[6].textContent = 'Invalid Quantity';
+			  return;
+			}
 
-		  let manHoursRequired = 0;
+			let manHoursRequired = 0;
 
-		  if (species === 'SKIPJACK TUNA') {
-			manHoursRequired = (remainingQuantity / 1423) * 35.25;
-		  } else if (species === 'YELLOWFIN TUNA') {
-			manHoursRequired = (remainingQuantity / 1000) * 10;
-		  }
+			if (species === 'SKIPJACK TUNA') {
+			  manHoursRequired = (remainingQuantity / 1423) * 35.25;
+			} else if (species === 'YELLOWFIN TUNA') {
+			  manHoursRequired = (remainingQuantity / 1000) * 10;
+			} else {
+			  row.children[6].textContent = 'Unknown Species';
+			  return;
+			}
 
-		  const timeNeededHours = manHoursRequired / availableWorkers;
-		  const totalMinutes = Math.round(timeNeededHours * 60);
-		  const hours = Math.floor(totalMinutes / 60);
-		  const minutes = totalMinutes % 60;
+			const timeNeededHours = manHoursRequired / availableWorkers;
+			const totalMinutes = Math.round(timeNeededHours * 60);
+			const hours = Math.floor(totalMinutes / 60);
+			const minutes = totalMinutes % 60;
 
-		  row.children[6].textContent = `${hours > 0 ? hours + ' h ' : ''}${minutes} min`;
-		});
+			row.children[6].textContent = `${hours > 0 ? hours + ' h ' : ''}${minutes} min`;
+		  });
+		} else {
+		  console.error("Document does not exist!");
+		}
+	  }, (error) => {
+		console.error("Error fetching available workers:", error);
 	  });
 	}
+
 
 
 	function calculateTimeElapsedWhenFinish() {
@@ -353,18 +369,18 @@
       const user = auth.currentUser;
       if (user && user.email === 'kumar@seaspire.com') { // Replace with your admin email
         const workerCount = document.getElementById('workerInput').value;
-        db.ref('/availableWorkers').set(parseInt(workerCount, 10))
-          .then(() => {
-            alert('Available workers updated successfully');
-          })
-          .catch((error) => {
-            alert('Error updating workers: ' + error.message);
-          });
-      } else {
-        alert('You do not have permission to perform this action');
-      }
-    }
-
+        db.collection('Workers').doc('w1').set({ availableWorkers: workerCount }, { merge: true })
+		  .then(() => {
+			alert('Available workers updated successfully');
+		  })
+		  .catch((error) => {
+			alert('Error updating workers: ' + error.message);
+		  });
+	  } else {
+		alert('You do not have permission to perform this action');
+	  }
+	}
+	
 	function calculateDaysElapsed(receivingDate) {
 	  const today = new Date();
 	  const receivedDate = new Date(receivingDate);
@@ -644,7 +660,7 @@
 	  const user = auth.currentUser;
 	  if (user && user.email === 'kumar@seaspire.com') { // Replace with your admin email
 		const currentTime = new Date().toISOString(); // Get current date and time in ISO format
-		db.ref('/lastUpdated').set(currentTime)
+		 db.collection('Workers').doc('Update').set({ lastUpdated: currentTime }, { merge: true })
 		  .then(() => {
 			alert('Last updated timestamp has been successfully updated.');
 			document.getElementById('lastUpdate').textContent = `Last Update: ${formatTimestamp(currentTime)}`;
