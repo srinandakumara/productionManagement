@@ -742,262 +742,277 @@
 
   </script>
   <style>
-    body {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        font-size: 100%; /* Base font size (16px) */
-    }
-    #homePage, #loginForm {
-        margin: 20px auto;
-        max-width: 95%;
-    }
-    #loginForm {
-        text-align: center;
-        background-color: #f9f9f9;
-        padding: 1.25rem; /* 20px */
-        border-radius: 8px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        max-width: 400px;
-    }
-    #loginForm h2 {
-        margin-bottom: 1.25rem; /* 20px */
-    }
-    #loginForm input {
-        display: block;
-        margin: 0.625rem auto; /* 10px */
-        padding: 0.625rem; /* 10px */
-        width: 80%;
-        max-width: 300px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-    }
-    #loginForm button {
-        background-color: #6c49b8;
-        color: #fff;
-        padding: 0.625rem; /* 10px */
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        width: 50%;
-    }
-    #loginForm button:hover {
-        background-color: #5a3f9d;
-    }
-    nav {
-        background-color: #6c49b8;
-        color: #fff;
-        padding: 0.625rem; /* 10px */
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: space-between;
-        align-items: center;
-    }
-    nav h1 {
-        margin: 0;
-        font-size: 1.5rem; /* 24px */
-    }
-    nav a {
-        color: #fff;
-        text-decoration: none;
-        margin: 0 0.625rem; /* 10px */
-        font-weight: bold;
-        font-size: 0.875rem; /* 14px */
-    }
-    nav button {
-        background-color: #28a745;
-        color: #fff;
-        border: none;
-        padding: 0.3125rem 0.625rem; /* 5px 10px */
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 0.875rem; /* 14px */
-    }
-    .content {
-        padding: 1.25rem; /* 20px */
-        text-align: center;
-    }
-    .table-label {
-        text-align: left;
-        font-weight: bold;
-        margin-bottom: 0.625rem; /* 10px */
-        font-size: 1.125rem; /* 18px */
-    }
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 1.25rem 0; /* 20px */
-        table-layout: fixed;
-        overflow-x: auto;
-    }
-    th, td {
-        border: 1px solid #ccc;
-        padding: 0.5rem; /* 8px */
-        text-align: center;
-        white-space: nowrap; /* Prevent text from wrapping */
-        overflow: hidden; /* Hide overflow */
-        text-overflow: ellipsis; /* Add ellipsis for overflow */
-        font-size: 1rem; /* Default font size (16px) */
-    }
-    /* Input and button styles */
-    input[type="text"], input[type="date"], input[type="number"], button {
-        max-width: 100%;
-        box-sizing: border-box;
-        font-size: 1rem; /* Match default font size */
-    }
-    th {
-        background-color: #6c49b8;
-        color: #fff;
-    }
-    input[type="text"], input[type="date"], input[type="email"], input[type="password"], input[type="number"] {
-        box-sizing: border-box;
-        padding: 0.5rem; /* 8px */
-        width: 100%;
-        font-size: 1rem;
-    }
-    button {
-        box-sizing: border-box;
-        padding: 0.5rem; /* 8px */
-        width: 100%;
-        font-size: 1rem;
-    }
-    .calculate-btn {
-        background-color: #00ff00;
-        color: #000;
-        border: 2px solid #00ff00;
-        padding: 0.625rem; /* 10px */
-        text-transform: uppercase;
-        cursor: pointer;
-        border-radius: 5px;
-        margin-top: 1.25rem; /* 20px */
-        font-size: 1rem;
-    }
-    /* Responsive adjustments */
+	body {
+		font-family: Arial, sans-serif;
+		margin: 0;
+		padding: 0;
+		box-sizing: border-box;
+		font-size: 100%; /* Base font size (16px) */
+	}
 
-    /* Adjusted media query for screens 768px and smaller */
-    @media only screen and (max-width: 768px) {
-        body {
-            font-size: 87.5%; /* Base font size reduced to 14px */
-        }
-        nav h1 {
-            font-size: 1.25rem; /* 20px */
-        }
-        nav a, nav button {
-            margin: 0.3125rem; /* 5px */
-            padding: 0.3125rem; /* 5px */
-            font-size: 0.75rem; /* 12px */
-        }
-        nav div {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            width: 100%;
-        }
-        nav a, nav button {
-            margin: 0.3125rem 0;
-        }
-        table {
-            font-size: 0.2rem; /* Approximately 6px */
-        }
-        th, td {
-            white-space: nowrap; /* Prevent text from wrapping */
-            overflow: hidden;    /* Hide overflow if content is too long */
-            text-overflow: ellipsis; /* Add ellipsis (...) if text overflows */
-            font-size: 0.2rem;  /* Approximately 6px */
-            padding: 0.06rem; /* 2px padding for smaller screens */
-        }
-        input[type="text"], input[type="date"], input[type="number"], button {
-            font-size: 0.85rem; /* Match table font size */
-        }
-        .content {
-            padding: 0.3125rem; /* 5px */
-        }
-        .calculate-btn {
-            padding: 0.5rem;    /* 8px */
-            font-size: 0.75rem; /* 12px */
-        }
-        .additional-tables-grid {
-            grid-template-columns: 1fr;
-        }
-        .worker-count {
-            position: static;
-            margin-top: 0.625rem; /* 10px */
-            align-self: center;
-        }
-        .table-label {
-            font-size: 1rem; /* 16px */
-        }
-        .add-row-btn {
-            font-size: 0.75rem; /* 12px */
-            padding: 0.5rem;    /* 8px */
-        }
-    }
+	#homePage, #loginForm {
+		margin: 20px auto;
+		max-width: 95%;
+	}
 
-    /* Adjusted media query for screens 480px and smaller */
-    @media only screen and (max-width: 480px) {
-        table {
-            font-size: 0.15rem; /* Approximately 5px for very small screens */
-        }
-        th, td {
-            font-size: 0.15rem; /* Approximately 5px */
-            padding: 0.05rem; /* 1.5px padding for tighter spacing */
-        }
-        input[type="text"], input[type="date"], input[type="number"], button {
-            font-size: 0.7rem; /* Match table font size */
-        }
-        .calculate-btn {
-            font-size: 0.7rem;
-            padding: 0.375rem; /* 6px */
-        }
-        .add-row-btn {
-            font-size: 0.7rem;
-            padding: 0.375rem; /* 6px */
-        }
-        nav h1 {
-            font-size: 1rem; /* 16px */
-        }
-        .table-label {
-            font-size: 0.875rem; /* 14px */
-        }
-        /* Adjust padding and margins as needed */
-        th, td {
-            padding: 0.25rem; /* 4px */
-        }
-    }
+	#loginForm {
+		text-align: center;
+		background-color: #f9f9f9;
+		padding: 1.25rem; /* 20px */
+		border-radius: 8px;
+		box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+		max-width: 400px;
+	}
 
-    /* Existing media query for screens 769px and larger */
-    @media only screen and (min-width: 769px) {
-        button {
-            width: auto;
-        }
-    }
+	#loginForm h2 {
+		margin-bottom: 1.25rem; /* 20px */
+	}
 
-    /* The rest of your CSS code remains unchanged */
-    .additional-tables-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1.25rem;         /* 20px */
-        margin-top: 1.25rem;  /* 20px */
-    }
-    .table-container {
-        text-align: center;
-        font-size: 1rem;      /* 16px */
-    }
-    .add-row-btn {
-        margin-top: 0.625rem; /* 10px */
-    }
-    .worker-count {
-        position: absolute;
-        top: 50px;
-        right: 10px;
-        background-color: #ffcc00;
-        color: #000000;
-        padding: 0.625rem;    /* 10px */
-        border-radius: 5px;
-        font-weight: bold;
-        font-size: 0.875rem;  /* 14px */
-    }
+	#loginForm input {
+		display: block;
+		margin: 0.625rem auto; /* 10px */
+		padding: 0.625rem; /* 10px */
+		width: 80%;
+		max-width: 300px;
+		border: 1px solid #ccc;
+		border-radius: 5px;
+	}
+
+	#loginForm button {
+		background-color: #6c49b8;
+		color: #fff;
+		padding: 0.625rem; /* 10px */
+		border: none;
+		border-radius: 5px;
+		cursor: pointer;
+		width: 50%;
+	}
+
+	#loginForm button:hover {
+		background-color: #5a3f9d;
+	}
+
+	nav {
+		background-color: #6c49b8;
+		color: #fff;
+		padding: 0.625rem; /* 10px */
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	nav h1 {
+		margin: 0;
+		font-size: 1.5rem; /* 24px */
+	}
+
+	nav a {
+		color: #fff;
+		text-decoration: none;
+		margin: 0 0.625rem; /* 10px */
+		font-weight: bold;
+		font-size: 0.875rem; /* 14px */
+	}
+
+	nav button {
+		background-color: #28a745;
+		color: #fff;
+		border: none;
+		padding: 0.3125rem 0.625rem; /* 5px 10px */
+		border-radius: 5px;
+		cursor: pointer;
+		font-size: 0.875rem; /* 14px */
+	}
+
+	.content {
+		padding: 1.25rem; /* 20px */
+		text-align: center;
+	}
+
+	.table-label {
+		text-align: left;
+		font-weight: bold;
+		margin-bottom: 0.625rem; /* 10px */
+		font-size: 1.125rem; /* 18px */
+	}
+
+	table {
+		width: 100%;
+		border-collapse: collapse;
+		margin: 1.25rem 0; /* 20px */
+		table-layout: fixed;
+		overflow-x: auto;
+	}
+
+	th, td {
+		border: 1px solid #ccc;
+		padding: 0.5rem; /* 8px */
+		text-align: center;
+		white-space: nowrap; /* Prevent text from wrapping */
+		overflow: hidden; /* Hide overflow */
+		text-overflow: ellipsis; /* Add ellipsis for overflow */
+		font-size: 1rem; /* Default font size (16px) */
+	}
+
+	th {
+		background-color: #6c49b8;
+		color: #fff;
+	}
+
+	input[type="text"], input[type="date"], input[type="number"] {
+		box-sizing: border-box;
+		font-size: 1rem;
+		padding: 0.5rem;
+		width: 100%;
+	}
+
+	button {
+		box-sizing: border-box;
+		padding: 0.5rem;
+		font-size: 1rem;
+		width: auto;
+	}
+
+	.calculate-btn {
+		background-color: #00ff00;
+		color: #000;
+		border: 2px solid #00ff00;
+		padding: 0.625rem; /* 10px */
+		text-transform: uppercase;
+		cursor: pointer;
+		border-radius: 5px;
+		margin-top: 1.25rem; /* 20px */
+		font-size: 1rem;
+	}
+
+	.additional-tables-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 1.25rem;         /* 20px */
+		margin-top: 1.25rem;  /* 20px */
+	}
+
+	.table-container {
+		text-align: center;
+		font-size: 1rem;      /* 16px */
+	}
+
+	.add-row-btn {
+		margin-top: 0.625rem; /* 10px */
+	}
+
+	.worker-count {
+		position: absolute;
+		top: 50px;
+		right: 10px;
+		background-color: #ffcc00;
+		color: #000000;
+		padding: 0.625rem;    /* 10px */
+		border-radius: 5px;
+		font-weight: bold;
+		font-size: 0.875rem;  /* 14px */
+	}
+
+	/* Responsive adjustments */
+
+	/* Larger screens (769px and above) */
+	@media only screen and (min-width: 769px) {
+		input[type="text"], input[type="date"], input[type="number"] {
+			font-size: 1rem;
+			padding: 0.5rem;
+		}
+		.calculate-btn, button {
+			padding: 0.625rem; /* Restore previous padding */
+			font-size: 1rem; /* Restore previous font size */
+		}
+	}
+
+	/* Screens 768px and smaller */
+	@media only screen and (max-width: 768px) {
+		body {
+			font-size: 87.5%; /* Base font size reduced to 14px */
+		}
+		nav h1 {
+			font-size: 1.25rem; /* 20px */
+		}
+		nav a, nav button {
+			margin: 0.3125rem; /* 5px */
+			padding: 0.3125rem; /* 5px */
+			font-size: 0.75rem; /* 12px */
+		}
+		nav div {
+			display: flex;
+			flex-direction: column;
+			align-items: flex-start;
+			width: 100%;
+		}
+		nav a, nav button {
+			margin: 0.3125rem 0;
+		}
+		table {
+			font-size: 0.35rem; /* Reduced font size for smaller screens */
+		}
+		th, td {
+			font-size: 0.35rem;
+			padding: 0.15rem;
+		}
+		input[type="text"], input[type="date"], input[type="number"], button {
+			font-size: 0.35rem;
+			padding: 0.15rem;
+		}
+		.content {
+			padding: 0.3125rem;
+		}
+		.calculate-btn {
+			padding: 0.5rem;
+			font-size: 0.75rem;
+		}
+		.additional-tables-grid {
+			grid-template-columns: 1fr;
+		}
+		.worker-count {
+			position: static;
+			margin-top: 0.625rem;
+			align-self: center;
+		}
+		.table-label {
+			font-size: 1rem;
+		}
+		.add-row-btn {
+			font-size: 0.75rem;
+			padding: 0.5rem;
+		}
+	}
+
+	/* Screens 480px and smaller */
+	@media only screen and (max-width: 480px) {
+		table {
+			font-size: 0.3rem; /* Reduced font size for very small screens */
+		}
+		th, td {
+			font-size: 0.3rem;
+			padding: 0.1rem;
+		}
+		input[type="text"], input[type="date"], input[type="number"], button {
+			font-size: 0.3rem;
+			padding: 0.1rem;
+		}
+		.calculate-btn {
+			font-size: 0.6rem;
+			padding: 0.3rem;
+		}
+		.add-row-btn {
+			font-size: 0.6rem;
+			padding: 0.3rem;
+		}
+		nav h1 {
+			font-size: 1rem;
+		}
+		.table-label {
+			font-size: 0.875rem;
+		}
+	}
   </style>
 </head>
 <body>
