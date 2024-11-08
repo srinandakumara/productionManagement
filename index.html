@@ -48,6 +48,7 @@
 		console.log("User logged in:", user.email);
 		document.getElementById('loginForm').style.display = 'none';
 		document.getElementById('homePage').style.display = 'block';
+		setPageDisplayBasedOnURL();
 		loadTableData();
 		loadWorkerData();
 		startFinishingTimeUpdate();
@@ -67,6 +68,7 @@
 		document.getElementById('loginForm').style.display = 'block';
 		document.getElementById('homePage').style.display = 'none';
 		document.getElementById('grnForm').style.display = 'none'; // Hide the GRN form when not logged in
+		document.getElementById('calculatePage').style.display = 'none';
 	  }
 	});
 
