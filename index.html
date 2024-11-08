@@ -42,23 +42,31 @@
 
     // Check authentication state
     auth.onAuthStateChanged((user) => {
+	  console.log("Auth state changed:", user);
+
 	  if (user) {
+		console.log("User logged in:", user.email);
 		document.getElementById('loginForm').style.display = 'none';
-		setPageDisplayBasedOnURL();
+		document.getElementById('homePage').style.display = 'block';
 		loadTableData();
 		loadWorkerData();
 		startFinishingTimeUpdate();
 
-		// Show admin controls if the user is the admin
+		// Show admin controls and GRN form if the user is the admin
 		if (user.email === 'kumar@seaspire.com') {
+		  console.log("Admin user detected");
 		  document.getElementById('adminControls').style.display = 'block';
+		  document.getElementById('grnForm').style.display = 'block'; // Show the GRN form for admin
 		} else {
+		  console.log("Non-admin user detected");
 		  document.getElementById('adminControls').style.display = 'none';
+		  document.getElementById('grnForm').style.display = 'none'; // Hide the GRN form for non-admin users
 		}
 	  } else {
+		console.log("No user logged in");
 		document.getElementById('loginForm').style.display = 'block';
 		document.getElementById('homePage').style.display = 'none';
-		document.getElementById('calculatePage').style.display = 'none';
+		document.getElementById('grnForm').style.display = 'none'; // Hide the GRN form when not logged in
 	  }
 	});
 
@@ -713,6 +721,39 @@
 		showHomePage();
 	  }
 	}
+	
+	async function addNewGRN() {
+    console.log("Add New GRN function triggered");
+
+    // Get values from the form inputs
+		const grnNo = document.getElementById("grnNo").value;
+		const receivedQuantity = document.getElementById("receivedQuantity").value;
+		const receivingDate = document.getElementById("receivingDate").value;
+		const remainingQuantity = document.getElementById("remainingQuantity").value;
+		const species = document.getElementById("species").value;
+
+		try {
+			// Add a new document to the GRNs collection in Firestore
+			const grnsCollectionRef = db.collection("GRNs");
+			const newDocRef = grnsCollectionRef.doc(); // Automatically generates a unique ID for the new document
+
+			await newDocRef.set({
+				grnNo: grnNo,
+				receivedQuantity: receivedQuantity + " kg",
+				receivingDate: receivingDate,
+				remainingQuantity: remainingQuantity + " kg",
+				species: species
+			});
+
+			alert("New GRN document added successfully!");
+			document.getElementById("newGrnForm").reset(); // Reset the form after submission
+			console.log("New GRN document added successfully!");
+
+		} catch (error) {
+			console.error("Error adding GRN document:", error);
+			alert("Error: " + error.message);
+		}
+	}	
 
 	// Update function to attach event listeners for real-time calculation
 	function addNewIceLoadingRow() {
@@ -913,6 +954,43 @@
 		font-weight: bold;
 		font-size: 0.875rem;  /* 14px */
 	}
+	#grnForm {
+	  text-align: center;
+	  background-color: #f9f9f9;
+	  padding: 20px;
+	  border-radius: 8px;
+	  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+	  max-width: 400px;
+	  margin: 20px auto;
+	}
+
+	#grnForm h2 {
+	  margin-bottom: 20px;
+	}
+
+	#grnForm input {
+	  display: block;
+	  margin: 10px auto;
+	  padding: 10px;
+	  width: 80%;
+	  max-width: 300px;
+	  border: 1px solid #ccc;
+	  border-radius: 5px;
+	}
+
+	#grnForm button {
+	  background-color: #6c49b8;
+	  color: #fff;
+	  padding: 10px;
+	  border: none;
+	  border-radius: 5px;
+	  cursor: pointer;
+	  width: 50%;
+	}
+
+	#grnForm button:hover {
+	  background-color: #5a3f9d;
+	}
 
 	/* Responsive adjustments */
 
@@ -1059,6 +1137,28 @@
 		<button onclick="updateLastUpdated()">UPDATE</button>
       </div>
     </div>
+	<!-- GRN Form -->
+	<div id="grnForm">
+	  <h2>Add New GRN Document</h2>
+	  <form id="newGrnForm">
+		<label for="grnNo">GRN Number:</label>
+		<input type="text" id="grnNo" name="grnNo" required><br><br>
+		
+		<label for="receivedQuantity">Received Quantity:</label>
+		<input type="text" id="receivedQuantity" name="receivedQuantity" required><br><br>
+		
+		<label for="receivingDate">Receiving Date:</label>
+		<input type="date" id="receivingDate" name="receivingDate" required><br><br>
+		
+		<label for="remainingQuantity">Remaining Quantity:</label>
+		<input type="text" id="remainingQuantity" name="remainingQuantity" required><br><br>
+		
+		<label for="species">Species:</label>
+		<input type="text" id="species" name="species" required><br><br>
+		
+		<button type="button" onclick="addNewGRN()">Submit</button>
+	  </form>
+	</div>
   </div>
 
   <div id="calculatePage" style="display: none;">
