@@ -885,6 +885,7 @@
 		border-collapse: collapse;
 		margin: 1.25rem 0; /* 20px */
 		table-layout: fixed;
+		font-size: 0.75rem;
 		overflow-x: auto;
 	}
 
@@ -895,7 +896,7 @@
 		white-space: nowrap; /* Prevent text from wrapping */
 		overflow: hidden; /* Hide overflow */
 		text-overflow: ellipsis; /* Add ellipsis for overflow */
-		font-size: 1rem; /* Default font size (16px) */
+		font-size: 0.75rem; /* Default font size (16px) */
 	}
 
 	th {
@@ -993,6 +994,9 @@
 	#grnForm button:hover {
 	  background-color: #5a3f9d;
 	}
+	#dataTable {
+		font-size: 0.75rem !important;
+	}
 
 	/* Responsive adjustments */
 
@@ -1007,7 +1011,11 @@
 			font-size: 1rem; /* Restore previous font size */
 		}
 	}
-
+	@media only screen and (max-width: 768px) {
+			#loginForm button {
+				font-size: 0.75rem; /* Adjust as needed */
+			}
+		}
 	/* Screens 768px and smaller */
 	@media only screen and (max-width: 768px) {
 		body {
